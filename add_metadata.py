@@ -27,6 +27,7 @@ from wsidicom.metadata import (
 from wsidicomizer.metadata import WsiDicomizerMetadata
 from wsidicomizer import WsiDicomizer
 
+
 def build_metadata() -> WsiDicomizerMetadata: 
     study = Study(identifier="Study identifier")
     series = Series(number=1)

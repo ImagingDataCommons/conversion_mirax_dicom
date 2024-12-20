@@ -1,4 +1,5 @@
 import os
+import datetime
 import argparse 
 import shutil
 from pathlib import Path
@@ -8,7 +9,7 @@ from typing import List
 
 def copy_mrxs_from_gaia(gaia_mrxs_path: Path, local_mrxs_path: Path) -> None:
     shutil.copy(gaia_mrxs_path, local_mrxs_path)
-    shutil.copytree(gaia_mrxs_path.with_suffix(''), local_mrxs_path.with_suffix('')) # copy corresponding folder with .dat and .ini files 
+    shutil.copytree(gaia_mrxs_path.with_suffix(''), local_mrxs_path.with_suffix(''), dirs_exist_ok=True) # copy corresponding folder with .dat and .ini files 
 
 
 def run_conversion(input_file: Path, output_folder: Path) -> None: 
@@ -21,7 +22,7 @@ def run_conversion(input_file: Path, output_folder: Path) -> None:
 
 
 def copy_dcm_to_gaia(local_dir: Path, gaia_dir: Path) -> None: 
-    shutil.copytree(local_dir, gaia_dir.joinpath(local_dir.name))
+    shutil.copytree(local_dir, gaia_dir.joinpath(local_dir.name), dirs_exist_ok=True)
 
 
 def clean_up(files_or_dirs: List[Path]) -> None: 
@@ -46,7 +47,7 @@ if __name__ == '__main__':
     log_file = args.local_work_dir.joinpath('log.txt')
     gaia_results_dir = args.gaia_work_dir.joinpath('bmdeep_DICOM_converted') 
     for dir in [local_input, local_output, gaia_results_dir]: 
-        dir.mkdir(parents=True, exist_ok=True) 
+        dir.mkdir(parents=True, exist_ok=True)
     
     # Conversion workflow
     for gaia_mrxs_file in args.gaia_work_dir.rglob('*_bm.mrxs'): 
@@ -54,19 +55,20 @@ if __name__ == '__main__':
         try: 
             copy_mrxs_from_gaia(gaia_mrxs_file, local_mrxs_file)
         except Exception as e: 
+            now = datetime.datetime.now()
             with open(log_file, 'a') as log: 
-                log.write(f'Copy error while working on {gaia_mrxs_file}: {e}\n')
+                log.write(f'{now.strftime('%Y-%m-%d %H:%M:%S')} - Copy error while working on {gaia_mrxs_file}: {e}\n')
             # Clean-up  
             clean_up([local_mrxs_file, local_mrxs_file.with_suffix('')])
             continue 
         
         converted_dicom_dir = local_output.joinpath(local_mrxs_file.stem)
         try: 
-            print(local_mrxs_file, converted_dicom_dir)
             run_conversion(local_mrxs_file, converted_dicom_dir)
         except Exception as e: 
+            now = datetime.datetime.now()
             with open(log_file, 'a') as log: 
-                log.write(f'Conversion error while working on {local_mrxs_file}: {e}\n')
+                log.write(f'{now.strftime('%Y-%m-%d %H:%M:%S')} - Conversion error while working on {local_mrxs_file}: {e}\n')
             # Clean-up 
             clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
             continue 
@@ -74,8 +76,9 @@ if __name__ == '__main__':
         try: 
             copy_dcm_to_gaia(converted_dicom_dir, gaia_results_dir)
         except Exception as e: 
+            now = datetime.datetime.now()
             with open(log_file, 'a') as log: 
-                log.write(f'Copy error while working on {converted_dicom_dir}: {e}\n')
+                log.write(f'{now.strftime('%Y-%m-%d %H:%M:%S')} - Copy error while working on {converted_dicom_dir}: {e}\n')
             # Clean-up 
             clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
             continue
