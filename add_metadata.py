@@ -27,26 +27,7 @@ from wsidicom.metadata import (
 from wsidicomizer.metadata import WsiDicomizerMetadata
 from wsidicomizer import WsiDicomizer
 
-
-if __name__ == '__main__': 
-    path_to_clinical_metadata = '/home/dschacherer/bmdeep_conversion/data/clinical_data.csv'
-    clinical_metadata = pd.read_csv(path_to_clinical_metadata, delimiter=';')
-    print(clinical_metadata)
-    path_to_input_file = '/home/dschacherer/bmdeep_conversion/data/F7177163C833DFF4B38FC8D2872F1EC6_1_bm.mrxs'
-    path_to_output_folder = '/home/dschacherer/bmdeep_conversion/data_converted/' # include subfolder 
-    tile_size = 512 # TODO: decide with Henning 
-
-
-    wsi = WsiDicomizer.open(path_to_input_file)
-    print(type(wsi.metadata), wsi.metadata) # WSI metadata
-    print(type(wsi.levels))
-    print(wsi.levels[1].datasets[0]) # level metadata
-    
-    
-    # Add clinical metadata from csv 
-
-
-    # Do we want to set any of these metadata as well? 
+def build_metadata() -> WsiDicomizerMetadata: 
     study = Study(identifier="Study identifier")
     series = Series(number=1)
     patient = Patient(name="FamilyName^GivenName")
@@ -91,7 +72,8 @@ if __name__ == '__main__':
         ],
         samples=[slide_sample],
     )
-    metadata = WsiDicomizerMetadata(
+    
+    return WsiDicomizerMetadata(
         study=study,
         series=series,
         patient=patient,
@@ -99,3 +81,24 @@ if __name__ == '__main__':
         slide=slide,
         label=label,
     )
+
+if __name__ == '__main__': 
+    path_to_clinical_metadata = '/home/dschacherer/bmdeep_conversion/data/clinical_data.csv'
+    clinical_metadata = pd.read_csv(path_to_clinical_metadata, delimiter=';')
+    print(clinical_metadata)
+    path_to_input_file = '/home/dschacherer/bmdeep_conversion/data/F7177163C833DFF4B38FC8D2872F1EC6_1_bm.mrxs'
+    path_to_output_folder = '/home/dschacherer/bmdeep_conversion/data_converted/' # include subfolder 
+    tile_size = 512 # TODO: decide with Henning 
+
+
+    wsi = WsiDicomizer.open(path_to_input_file)
+    print(type(wsi.metadata), wsi.metadata) # WSI metadata
+    print(type(wsi.levels))
+    print(wsi.levels[1].datasets[0]) # level metadata
+    
+    
+    # Add clinical metadata from csv 
+
+
+    # Do we want to set any of these metadata as well? 
+    
