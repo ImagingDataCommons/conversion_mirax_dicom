@@ -15,7 +15,8 @@ def run_conversion(input_file: Path, output_folder: Path) -> Path:
     _ = WsiDicomizer.convert(
         filepath=input_file,
         output_path=output_folder,
-        metadata=None
+        metadata=None,
+        workers=4
     )
 
 
@@ -48,23 +49,24 @@ if __name__ == '__main__':
         dir.mkdir(parents=True, exist_ok=True) 
     
     # Conversion workflow
-    for gaia_mrxs_path in args.gaia_work_dir.rglob('*_bm.mrxs'): 
-        local_mrxs_path = local_input.joinpath(gaia_mrxs_path.name)
+    for gaia_mrxs_file in args.gaia_work_dir.rglob('*_bm.mrxs'): 
+        local_mrxs_file = local_input.joinpath(gaia_mrxs_file.name)
         try: 
-            local_mrxs_file = copy_mrxs_from_gaia(gaia_mrxs_path, local_mrxs_path)
+            copy_mrxs_from_gaia(gaia_mrxs_file, local_mrxs_file)
         except Exception as e: 
             with open(log_file, 'a') as log: 
-                log.write(f'Copy error {e}: {gaia_mrxs_path}\n')
+                log.write(f'Copy error while working on {gaia_mrxs_file}: {e}\n')
             # Clean-up  
             clean_up([local_mrxs_file, local_mrxs_file.with_suffix('')])
             continue 
         
         converted_dicom_dir = local_output.joinpath(local_mrxs_file.stem)
         try: 
+            print(local_mrxs_file, converted_dicom_dir)
             run_conversion(local_mrxs_file, converted_dicom_dir)
         except Exception as e: 
             with open(log_file, 'a') as log: 
-                log.write(f'Conversion error {e}: {local_mrxs_file}\n')
+                log.write(f'Conversion error while working on {local_mrxs_file}: {e}\n')
             # Clean-up 
             clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
             continue 
@@ -73,7 +75,7 @@ if __name__ == '__main__':
             copy_dcm_to_gaia(converted_dicom_dir, gaia_results_dir)
         except Exception as e: 
             with open(log_file, 'a') as log: 
-                log.write(f'Copy error {e}: {converted_dicom_dir}\n')
+                log.write(f'Copy error while working on {converted_dicom_dir}: {e}\n')
             # Clean-up 
             clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
             continue
