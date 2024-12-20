@@ -11,7 +11,7 @@ def copy_mrxs_from_gaia(gaia_mrxs_path: Path, local_mrxs_path: Path) -> None:
     shutil.copytree(gaia_mrxs_path.with_suffix(''), local_mrxs_path.with_suffix('')) # copy corresponding folder with .dat and .ini files 
 
 
-def run_conversion(input_file: Path, output_folder: Path) -> Path: 
+def run_conversion(input_file: Path, output_folder: Path) -> None: 
     _ = WsiDicomizer.convert(
         filepath=input_file,
         output_path=output_folder,
