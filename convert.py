@@ -57,7 +57,7 @@ if __name__ == '__main__':
         except Exception as e: 
             now = datetime.datetime.now()
             with open(log_file, 'a') as log: 
-                log.write(f'{now.strftime('%Y-%m-%d %H:%M:%S')} - Copy error while working on {gaia_mrxs_file}: {e}\n')
+                log.write(f'{now.strftime("%Y-%m-%d %H:%M:%S")} - Copy error while working on {gaia_mrxs_file} >>> {e}\n')
             # Clean-up  
             clean_up([local_mrxs_file, local_mrxs_file.with_suffix('')])
             continue 
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         except Exception as e: 
             now = datetime.datetime.now()
             with open(log_file, 'a') as log: 
-                log.write(f'{now.strftime('%Y-%m-%d %H:%M:%S')} - Conversion error while working on {local_mrxs_file}: {e}\n')
+                log.write(f'{now.strftime("%Y-%m-%d %H:%M:%S")} - Conversion error while working on {local_mrxs_file} >>> {e}\n')
             # Clean-up 
             clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
             continue 
@@ -78,9 +78,11 @@ if __name__ == '__main__':
         except Exception as e: 
             now = datetime.datetime.now()
             with open(log_file, 'a') as log: 
-                log.write(f'{now.strftime('%Y-%m-%d %H:%M:%S')} - Copy error while working on {converted_dicom_dir}: {e}\n')
+                log.write(f'{now.strftime("%Y-%m-%d %H:%M:%S")} - Copy error while working on {converted_dicom_dir} >>> {e}\n')
             # Clean-up 
             clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
             continue
 
         clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
+        with open(log_file, 'a') as log: 
+            log.write(f'{now.strftime("%Y-%m-%d %H:%M:%S")} - Successfully converted {gaia_mrxs_file}\n')
