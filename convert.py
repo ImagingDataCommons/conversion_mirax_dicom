@@ -1,3 +1,4 @@
+from multiprocessing import Process
 import os
 import datetime
 import argparse 
@@ -17,12 +18,17 @@ def run_conversion(input_file: Path, output_folder: Path) -> None:
         filepath=input_file,
         output_path=output_folder,
         metadata=None,
-        workers=4
+        workers=4, 
+        include_label=False, 
+        #levels=[list of level indices to be generated]
     )
 
 
 def copy_dcm_to_gaia(local_dir: Path, gaia_dir: Path) -> None: 
-    shutil.copytree(local_dir, gaia_dir.joinpath(local_dir.name), dirs_exist_ok=True)
+    print(local_dir.iterdir())
+    for file in local_dir.iterdir(): 
+        shutil.copy(file, gaia_dir.joinpath(local_dir.name))    
+    #shutil.copytree(local_dir, gaia_dir.joinpath(local_dir.name), dirs_exist_ok=True)
 
 
 def clean_up(files_or_dirs: List[Path]) -> None: 
@@ -51,6 +57,11 @@ if __name__ == '__main__':
     
     # Conversion workflow
     for gaia_mrxs_file in args.gaia_work_dir.rglob('*_bm.mrxs'): 
+        
+        # Check if already converted
+        if os.path.exists(gaia_results_dir.joinpath(gaia_mrxs_file.name).with_suffix('')):
+            continue
+
         local_mrxs_file = local_input.joinpath(gaia_mrxs_file.name)
         try: 
             copy_mrxs_from_gaia(gaia_mrxs_file, local_mrxs_file)
@@ -64,7 +75,10 @@ if __name__ == '__main__':
         
         converted_dicom_dir = local_output.joinpath(local_mrxs_file.stem)
         try: 
-            run_conversion(local_mrxs_file, converted_dicom_dir)
+          # Run in separate process to ensure release of RAM afterwards
+          p = Process(target=run_conversion, args=(local_mrxs_file, converted_dicom_dir))
+          p.start()
+          p.join()
         except Exception as e: 
             now = datetime.datetime.now()
             with open(log_file, 'a') as log: 
