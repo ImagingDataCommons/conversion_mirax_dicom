@@ -20,12 +20,12 @@ def run_conversion(input_file: Path, output_folder: Path) -> None:
         metadata=None,
         workers=4, 
         include_label=False, 
-        #levels=[list of level indices to be generated]
+        tile_size=240, 
+        levels=[0,2,4,6]
     )
 
 
 def copy_dcm_to_gaia(local_dir: Path, gaia_dir: Path) -> None: 
-    print(local_dir.iterdir())
     for file in local_dir.iterdir(): 
         shutil.copy(file, gaia_dir.joinpath(local_dir.name))    
     #shutil.copytree(local_dir, gaia_dir.joinpath(local_dir.name), dirs_exist_ok=True)
