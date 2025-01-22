@@ -1,6 +1,6 @@
 from multiprocessing import Process
 import os
-import datetime
+from datetime import datetime
 import argparse 
 import shutil
 from pathlib import Path
@@ -20,15 +20,16 @@ def run_conversion(input_file: Path, output_folder: Path) -> None:
         metadata=None,
         workers=4, 
         include_label=False, 
-        tile_size=240, 
-        levels=[0,2,4,6]
+        tile_size=240, # wsidicom seems to not be able to infer tile size from mrxs automatically, so will use this one provided here.
+        include_levels=[0,2,4,6] 
     )
 
 
 def copy_dcm_to_gaia(local_dir: Path, gaia_dir: Path) -> None: 
-    for file in local_dir.iterdir(): 
-        shutil.copy(file, gaia_dir.joinpath(local_dir.name))    
-    #shutil.copytree(local_dir, gaia_dir.joinpath(local_dir.name), dirs_exist_ok=True)
+    dest_dir = gaia_dir.joinpath(local_dir.name)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    for file in list(local_dir.iterdir()): 
+        shutil.copyfile(file, dest_dir.joinpath(file.name))    
 
 
 def clean_up(files_or_dirs: List[Path]) -> None: 
@@ -63,40 +64,16 @@ if __name__ == '__main__':
             continue
 
         local_mrxs_file = local_input.joinpath(gaia_mrxs_file.name)
-        try: 
-            copy_mrxs_from_gaia(gaia_mrxs_file, local_mrxs_file)
-        except Exception as e: 
-            now = datetime.datetime.now()
-            with open(log_file, 'a') as log: 
-                log.write(f'{now.strftime("%Y-%m-%d %H:%M:%S")} - Copy error while working on {gaia_mrxs_file} >>> {e}\n')
-            # Clean-up  
-            clean_up([local_mrxs_file, local_mrxs_file.with_suffix('')])
-            continue 
-        
+        copy_mrxs_from_gaia(gaia_mrxs_file, local_mrxs_file)
+               
         converted_dicom_dir = local_output.joinpath(local_mrxs_file.stem)
-        try: 
-          # Run in separate process to ensure release of RAM afterwards
-          p = Process(target=run_conversion, args=(local_mrxs_file, converted_dicom_dir))
-          p.start()
-          p.join()
-        except Exception as e: 
-            now = datetime.datetime.now()
-            with open(log_file, 'a') as log: 
-                log.write(f'{now.strftime("%Y-%m-%d %H:%M:%S")} - Conversion error while working on {local_mrxs_file} >>> {e}\n')
-            # Clean-up 
-            clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
-            continue 
-        
-        try: 
-            copy_dcm_to_gaia(converted_dicom_dir, gaia_results_dir)
-        except Exception as e: 
-            now = datetime.datetime.now()
-            with open(log_file, 'a') as log: 
-                log.write(f'{now.strftime("%Y-%m-%d %H:%M:%S")} - Copy error while working on {converted_dicom_dir} >>> {e}\n')
-            # Clean-up 
-            clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
-            continue
+        # Run in separate process to ensure release of RAM afterwards
+        p = Process(target=run_conversion, args=(local_mrxs_file, converted_dicom_dir))
+        p.start()
+        p.join()
+    
+        copy_dcm_to_gaia(converted_dicom_dir, gaia_results_dir)
 
         clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
         with open(log_file, 'a') as log: 
-            log.write(f'{now.strftime("%Y-%m-%d %H:%M:%S")} - Successfully converted {gaia_mrxs_file}\n')
+            log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - Successfully converted {gaia_mrxs_file}\n')
