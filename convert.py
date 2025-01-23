@@ -20,8 +20,9 @@ def run_conversion(input_file: Path, output_folder: Path) -> None:
         metadata=None,
         workers=4, 
         include_label=False, 
-        tile_size=240, # wsidicom seems to not be able to infer tile size from mrxs automatically, so will use this one provided here.
-        include_levels=[0,2,4,6] 
+        tile_size=512 # wsidicom seems to not be able to infer tile size from mrxs automatically, so will use this one provided here.
+        #include_levels=[0,2,4,6], 
+        #offset_table=None
     )
 
 
@@ -57,10 +58,12 @@ if __name__ == '__main__':
         dir.mkdir(parents=True, exist_ok=True)
     
     # Conversion workflow
-    for gaia_mrxs_file in args.gaia_work_dir.rglob('*_bm.mrxs'): 
+    for gaia_mrxs_file in sorted(args.gaia_work_dir.rglob('*_bm.mrxs')): 
         
         # Check if already converted
         if os.path.exists(gaia_results_dir.joinpath(gaia_mrxs_file.name).with_suffix('')):
+            with open(log_file, 'a') as log: 
+                log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - Already converted {gaia_mrxs_file}. Continuing.\n')
             continue
 
         local_mrxs_file = local_input.joinpath(gaia_mrxs_file.name)
