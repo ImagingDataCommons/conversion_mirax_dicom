@@ -1,0 +1,19 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal", 
+            "justMyCode": false, 
+            "args": ["mrxs_file", "/home/dschacherer/bmdeep_conversion/data/F7177163C833DFF4B38FC8D2872F1EC6_1_bm.mrxs", "dcm_file", "/home/dschacherer/bmdeep_conversion/data/bmdeep_DICOM_converted_tilesize240/F7177163C833DFF4B38FC8D2872F1EC6_1_bm/1.2.826.0.1.3680043.8.498.51032293413023292649501225606847735564.dcm"]
+
+        }
+    ]
+}

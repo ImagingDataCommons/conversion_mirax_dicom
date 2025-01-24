@@ -11,23 +11,15 @@ Code for BMDeep dataset conversion from MRXS to DICOM on a local machine, while 
     5. sudo apt-get install xutils-dev
     6. cd dicom3tools && ./Configure && imake -I./config -DInstallInTopDir -DUseXXXXID && make World && make install
 
-## TODOs
-1. Test basic conversion and investigate automatically filled metadata (including pixel spacing)
-    - Default values are across this code directory: https://github.com/imi-bigpicture/wsidicom/tree/ab16e38c678b4bb6eb8e2c670d4c7278c67edf03/wsidicom/metadata
-    - Contact wsidicom author with questions. 
-2. Include additional available metadata (via wsidicom API or JSON)
-3. Verify correct conversion with dciodvfy on every file and dcentvfy on every set of files in a series. 
-4. Create BigQuery tables for lab and genetic data
+## Documentation 
+- see [BMDeep Conversion notes](https://docs.google.com/document/d/1yobF48SQlx4rMwwsj-T324Nfu25PJt5CFDlQB9E1Z-8/edit?tab=t.0)
+- see PW42 Project Page: [Conversion of bone marrow smear dataset from MIRAX format into DICOM](https://projectweek.na-mic.org/PW42_2025_GranCanaria/Projects/ConversionOfBoneMarrowSmearDatasetFromMiraxFormatIntoDicom/)
 
-### Investigation of automatically filled metadata
-Overview on attributes: https://dicom.innolitics.com/ciods/vl-whole-slide-microscopy-image 
-
-
-#### Potential problems (identified by manual inspection)
+### Potential problems (identified by manual inspection)
 - Specimen UID different for each SOPInstance in Series -> should be the same
 - Default ICC profile valid? 
 - AnatomicPathologySpecimenTypesCode -> could not even find that attribute
 - Photometric Interpretation? 
 - Is compression method ISO_10918_1 fine? 
 - X Offset in Slide Coordinate System --> how can I check that? 
-- Are 10 DICOM levels too much? How can this be influenced during conversion ? 
+- Are 10 DICOM levels too much? How can this be influenced during conversion? 
