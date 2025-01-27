@@ -1,6 +1,7 @@
 from wsidicom import WsiDicom 
 import openslide
 import argparse 
+import pydicom
 from pathlib import Path
 
 if __name__ == '__main__': 
@@ -11,6 +12,7 @@ if __name__ == '__main__':
 
     print('MRXS slide opened with Openslide:')
     mrxs_slide = openslide.OpenSlide(args.mrxs_file)
+    print(mrxs_slide.properties)
     print('Level count:', mrxs_slide.level_count)
     print('Level dimensions:', mrxs_slide.level_dimensions)
     tile_mrxs = mrxs_slide.read_region(location=(80000, 190000), level=0, size=(512,512))
@@ -33,7 +35,7 @@ if __name__ == '__main__':
 
     print('DCM slide opened with wsidicom:')
     wsi_dcm = WsiDicom.open(args.dcm_file.parent)
-    #print(pydicom.Dataset(wsi_dcm.levels[0].datasets[0])) # level metadata
+    print(pydicom.Dataset(wsi_dcm.levels[0].datasets[0])) # level metadata
     print(wsi_dcm.levels)
     tile = wsi_dcm.read_region(location=(80000, 190000), level=0, size=(512,512))
     tile.save(args.dcm_file.parents[1].joinpath('tile_dcm_wsidicom.png'))
