@@ -16,6 +16,7 @@ from wsidicom.metadata import (
     Fixation,
     Label,
     Patient,
+    PatientSex,
     Sample,
     Series,
     Slide,
@@ -28,37 +29,46 @@ from wsidicomizer.metadata import WsiDicomizerMetadata
 from wsidicomizer import WsiDicomizer
 
 
-def build_metadata() -> WsiDicomizerMetadata: 
-    study = Study(identifier="Study identifier")
-    series = Series(number=1)
-    patient = Patient(name="FamilyName^GivenName")
-    label = Label(text="Label text")
-    equipment = Equipment(
-        manufacturer="Scanner manufacturer",
-        model_name="Scanner model name",
-        device_serial_number="Scanner serial number",
-        software_versions=["Scanner software versions"],
-    )
+# TODO: add private tag with original filename to enable later problem tracking
 
+def build_collection_wide_metadata() -> WsiDicomizerMetadata: 
+    study = Study(uid="Study Instance UID", 
+                  identifier="Study identifier"
+    )
+    
+    series = Series(uid="Series Instance UID",
+                    number=1
+    )
+     
+    patient = Patient(
+        identifier="Patient", 
+        sex=PatientSex, 
+        species_description="" # , 
+        de_identification="" # 
+    )
+    
+    # for two patients a different scanner was used
+    # Camera type etc. and more available in Mirax file's attributes 
+    equipment = Equipment(
+        manufacturer="Mirax",
+        model_name="Scanner model name", # 'mirax.NONHIERLAYER_1_SECTION.SCANNER_HARDWARE_VERSION'
+        device_serial_number="Scanner serial number", # not available to my knowledge
+        software_versions=["Scanner software versions"], #'mirax.NONHIERLAYER_1_SECTION.SCANNER_SOFTWARE_VERSION': '1,18,2,51404',
+    )
+ 
     specimen = Specimen(
         identifier="Specimen",
-        extraction_step=Collection(method=SpecimenCollectionProcedureCode("Excision")),
-        type=AnatomicPathologySpecimenTypesCode("Gross specimen"),
-        container=ContainerTypeCode("Specimen container"),
-        steps=[Fixation(fixative=SpecimenFixativesCode("Neutral Buffered Formalin"))],
-    )
-
-    block = Sample(
-        identifier="Block",
-        sampled_from=[specimen.sample(method=SpecimenSamplingProcedureCode("Dissection"))],
-        type=AnatomicPathologySpecimenTypesCode("tissue specimen"),
-        container=ContainerTypeCode("Tissue cassette"),
-        steps=[Embedding(medium=SpecimenEmbeddingMediaCode("Paraffin wax"))],
+        extraction_step=Collection(method=SpecimenCollectionProcedureCode("Aspiration")), # P1-03130
+        type=AnatomicPathologySpecimenTypesCode("Aspirate"), # G-8003
+        container=ContainerTypeCode("Specimen vial"), # A-01024 
     )
 
     slide_sample = SlideSample(
         identifier="Slide sample",
-        sampled_from=block.sample(method=SpecimenSamplingProcedureCode("Block sectioning")),
+        type=AnatomicPathologySpecimenTypesCode("Smear sample"), # G-803C
+        sampled_from=specimen.sample(method=SpecimenSamplingProcedureCode("Smear procedure")), # P1-0329D
+        container=ContainerTypeCode("Microscope slide"), # A-0101B
+        steps=[Fixation(fixative=SpecimenFixativesCode("Neutral Buffered Formalin"))], # is there any?
     )
 
     slide = Slide(
@@ -66,40 +76,27 @@ def build_metadata() -> WsiDicomizerMetadata:
         stainings=[
             Staining(
                 substances=[
-                    SpecimenStainsCode("hematoxylin stain"),
-                    SpecimenStainsCode("water soluble eosin stain"),
+                    SpecimenStainsCode("may-Grunwald giemsa stain"), # C-2281A
                 ]
             )
         ],
         samples=[slide_sample],
     )
     
+    # TODO: 
+    # Image, OpticalPath
+
     return WsiDicomizerMetadata(
         study=study,
         series=series,
         patient=patient,
         equipment=equipment,
-        slide=slide,
-        label=label,
-    )
+        slide=slide
+    ) 
+
+def fill_missing_metadata(metadata: WsiDicomizerMetadata) -> WsiDicomizerMetadata: 
+    pass 
 
 if __name__ == '__main__': 
     path_to_clinical_metadata = '/home/dschacherer/bmdeep_conversion/data/clinical_data.csv'
-    clinical_metadata = pd.read_csv(path_to_clinical_metadata, delimiter=';')
-    print(clinical_metadata)
-    path_to_input_file = '/home/dschacherer/bmdeep_conversion/data/F7177163C833DFF4B38FC8D2872F1EC6_1_bm.mrxs'
-    path_to_output_folder = '/home/dschacherer/bmdeep_conversion/data_converted/' # include subfolder 
-    tile_size = 512 # TODO: decide with Henning 
-
-
-    wsi = WsiDicomizer.open(path_to_input_file)
-    print(type(wsi.metadata), wsi.metadata) # WSI metadata
-    print(type(wsi.levels))
-    print(wsi.levels[1].datasets[0]) # level metadata
-    
-    
-    # Add clinical metadata from csv 
-
-
-    # Do we want to set any of these metadata as well? 
-    
+    clinical_metadata = pd.read_csv(path_to_clinical_metadata, delimiter=';')    
