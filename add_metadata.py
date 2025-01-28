@@ -1,20 +1,20 @@
+import argparse
+import openslide
 import pandas as pd 
+from pathlib import Path
+from enum import Enum
 
 from wsidicom.conceptcode import (
     AnatomicPathologySpecimenTypesCode,
     ContainerTypeCode,
     SpecimenCollectionProcedureCode,
-    SpecimenEmbeddingMediaCode,
-    SpecimenFixativesCode,
     SpecimenSamplingProcedureCode,
     SpecimenStainsCode,
 )
 from wsidicom.metadata import (
     Collection,
-    Embedding,
     Equipment,
-    Fixation,
-    Label,
+    Image,
     Patient,
     PatientSex,
     Sample,
@@ -26,49 +26,55 @@ from wsidicom.metadata import (
     Study,
 )
 from wsidicomizer.metadata import WsiDicomizerMetadata
-from wsidicomizer import WsiDicomizer
 
 
-# TODO: add private tag with original filename to enable later problem tracking
+# TODO: add private tag with original filename to enable later problem tracking. Not necessary, filename=patient id
+def build_metadata(patient_id: str, mrxs_metadata: openslide._PropertyMap, clinical_data: pd.DataFrame) -> WsiDicomizerMetadata: 
 
-def build_collection_wide_metadata() -> WsiDicomizerMetadata: 
-    study = Study(uid="Study Instance UID", 
-                  identifier="Study identifier"
-    )
-    
-    series = Series(uid="Series Instance UID",
-                    number=1
-    )
-     
-    patient = Patient(
-        identifier="Patient", 
-        sex=PatientSex, 
-        species_description="" # , 
-        de_identification="" # 
-    )
-    
-    # for two patients a different scanner was used
-    # Camera type etc. and more available in Mirax file's attributes 
     equipment = Equipment(
         manufacturer="Mirax",
-        model_name="Scanner model name", # 'mirax.NONHIERLAYER_1_SECTION.SCANNER_HARDWARE_VERSION'
+        model_name= mrxs_metadata['mirax.NONHIERLAYER_1_SECTION.SCANNER_HARDWARE_VERSION'], 
         device_serial_number="Scanner serial number", # not available to my knowledge
-        software_versions=["Scanner software versions"], #'mirax.NONHIERLAYER_1_SECTION.SCANNER_SOFTWARE_VERSION': '1,18,2,51404',
+        software_versions=[mrxs_metadata['mirax.NONHIERLAYER_1_SECTION.SCANNER_SOFTWARE_VERSION']]
+    )
+
+    image = Image(
+        acquisition_datetime=mrxs_metadata['mirax.GENERAL.SLIDE_CREATIONDATETIME'],
+        # objective power 'openslide.objective-power' or mirax.GENERAL.OBJECTIVE_MAGNIFICATION # not inferred automatically
+        # camera type mirax.GENERAL.CAMERA_TYPE': 'CIS_VCC_F52U25CL'
+        # 'mirax.GENERAL.OBJECTIVE_NAME': 'Plan-Apochromat
+        lossy_compressions="" # how to handle compression, uncompression, recompression
+    )
+
+    # Note UID will be generated automatically
+    study = Study(identifier="Study identifier") # necessary?
+
+    # Note UID will be generated automatically, can be removed if we don't need to add anything else
+    series = Series()
+     
+    patient = Patient(
+        identifier=patient_id, 
+        sex=PatientSex(clinical_data.loc[patient_id]['gender']),
+        de_identification="" # 
     )
  
     specimen = Specimen(
-        identifier="Specimen",
+        identifier="Aspirate", # necessary?
         extraction_step=Collection(method=SpecimenCollectionProcedureCode("Aspiration")), # P1-03130
         type=AnatomicPathologySpecimenTypesCode("Aspirate"), # G-8003
-        container=ContainerTypeCode("Specimen vial"), # A-01024 
+        container=ContainerTypeCode("Specimen vial") # A-01024 
     )
 
-    slide_sample = SlideSample(
-        identifier="Slide sample",
+    smear = Sample(
+        identifier="Smear", # necessary?
+        sampled_from=[specimen.sample(method=SpecimenSamplingProcedureCode("Smear procedure"))],# P1-0329D
         type=AnatomicPathologySpecimenTypesCode("Smear sample"), # G-803C
-        sampled_from=specimen.sample(method=SpecimenSamplingProcedureCode("Smear procedure")), # P1-0329D
-        container=ContainerTypeCode("Microscope slide"), # A-0101B
-        steps=[Fixation(fixative=SpecimenFixativesCode("Neutral Buffered Formalin"))], # is there any?
+        container=ContainerTypeCode("Microscope slide")
+    )
+ 
+    slide_sample = SlideSample(
+        identifier="Slide sample", # necessary? 
+        sampled_from=smear.sample(method=SpecimenSamplingProcedureCode("Smear procedure")), # P1-0329D
     )
 
     slide = Slide(
@@ -83,10 +89,9 @@ def build_collection_wide_metadata() -> WsiDicomizerMetadata:
         samples=[slide_sample],
     )
     
-    # TODO: 
-    # Image, OpticalPath
 
     return WsiDicomizerMetadata(
+        image=image,
         study=study,
         series=series,
         patient=patient,
@@ -94,9 +99,18 @@ def build_collection_wide_metadata() -> WsiDicomizerMetadata:
         slide=slide
     ) 
 
-def fill_missing_metadata(metadata: WsiDicomizerMetadata) -> WsiDicomizerMetadata: 
-    pass 
-
 if __name__ == '__main__': 
-    path_to_clinical_metadata = '/home/dschacherer/bmdeep_conversion/data/clinical_data.csv'
-    clinical_metadata = pd.read_csv(path_to_clinical_metadata, delimiter=';')    
+    parser = argparse.ArgumentParser(description='Generate WsiDicomizerMetadata for testing.') 
+    parser.add_argument('mrxs_file', type=Path, help='Path to MRXS file.')
+    parser.add_argument('clinical_data', type=Path, help='Path to clinical data csv table.')
+    args = parser.parse_args()
+
+    mrxs_file = openslide.OpenSlide(args.mrxs_file)
+    clinical_metadata = pd.read_csv(args.clinical_data, delimiter=';')
+    print(clinical_metadata)
+    clinical_metadata.set_index('patient_id', inplace=True)
+    print(clinical_metadata)
+    patient_id = args.mrxs_file.stem.split('_')[0]
+    print(patient_id)
+    wsidicomizer_metadata = build_metadata(patient_id, mrxs_file.properties, clinical_metadata)
+    print(wsidicomizer_metadata)
