@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 from wsidicomizer import WsiDicomizer
 from typing import List
+from add_metadata import manual_metadata_adding
 
 
 def copy_mrxs_from_gaia(gaia_mrxs_path: Path, local_mrxs_path: Path) -> None:
@@ -74,7 +75,17 @@ if __name__ == '__main__':
         p = Process(target=run_conversion, args=(local_mrxs_file, converted_dicom_dir))
         p.start()
         p.join()
-    
+
+        manual_metadata_adding(patient_age='018M', 
+                               aquisition_duration=300, 
+                               primary_diagnoses_code_seq='bla', 
+                               admitting_diagnoses_description='bla', 
+                               accession_number='patient id',
+                               clinical_trial_coord_center='bli', 
+                               clinical_trial_protocol_name='bla', 
+                               clinical_trial_sponsor='blub', 
+                               dcm_files=list(converted_dicom_dir.iterdir()))
+        
         copy_dcm_to_gaia(converted_dicom_dir, gaia_results_dir)
 
         clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
