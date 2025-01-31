@@ -115,6 +115,7 @@ def manual_metadata_adding(patient_age: str,
     for dcm_file in dcm_files:
         ds = pydicom.dcmread(dcm_file)
         ds.PatientAge = patient_age 
+        ds.add_new([0x0020,0x0012], 'IS', accession_number)
         ds.add_new([0x0020, 0x0012], 'IS', aquisition_duration) 
         ds.add_new([0x0008, 0x1080], 'LO', admitting_diagnoses_description)
         ds.add_new([0x0012, 0x0060], 'LO', clinical_trial_coord_center) 
