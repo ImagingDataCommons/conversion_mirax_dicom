@@ -1,12 +1,15 @@
-from multiprocessing import Process
 import os
-from datetime import datetime
 import argparse 
 import shutil
+import openslide
+import pandas as pd
 from pathlib import Path
 from wsidicomizer import WsiDicomizer
-from typing import List
-from add_metadata import manual_metadata_adding
+from wsidicomizer.metadata import WsiDicomizerMetadata
+from datetime import datetime
+from multiprocessing import Process
+from typing import Dict, List
+from add_metadata import find_property_by_suffix, build_metadata, manual_metadata_adding
 
 
 def copy_mrxs_from_gaia(gaia_mrxs_path: Path, local_mrxs_path: Path) -> None:
@@ -14,16 +17,23 @@ def copy_mrxs_from_gaia(gaia_mrxs_path: Path, local_mrxs_path: Path) -> None:
     shutil.copytree(gaia_mrxs_path.with_suffix(''), local_mrxs_path.with_suffix(''), dirs_exist_ok=True) # copy corresponding folder with .dat and .ini files 
 
 
-def run_conversion(input_file: Path, output_folder: Path) -> None: 
+def get_mrxs_slide_properties(mrxs_file: Path) -> Dict: 
+    mrxs_slide = openslide.OpenSlide(mrxs_file)
+    mrxs_properties = dict(mrxs_slide.properties)
+    mrxs_slide.close()
+    return mrxs_properties
+
+
+def run_conversion(input_file: Path, output_folder: Path, metadata: WsiDicomizerMetadata) -> None: 
     _ = WsiDicomizer.convert(
         filepath=input_file,
         output_path=output_folder,
-        metadata=None,
-        workers=4, 
+        metadata=metadata,
+        tile_size=1024, # wsidicom seems to not be able to infer tile size from mrxs automatically, so will use this one provided here.
+        #include_levels=, 
         include_label=False, 
-        tile_size=512 # wsidicom seems to not be able to infer tile size from mrxs automatically, so will use this one provided here.
-        #include_levels=[0,2,4,6], 
-        #offset_table=None
+        workers=4, 
+        offset_table='eot'
     )
 
 
@@ -47,7 +57,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run BMDeep dataset conversion from MRXS to DICOM on a local machine, but retrieving dataset from mounted server.') 
     parser.add_argument('gaia_work_dir', type=Path, help='Path to directory on Gaia which should be searched for MRXS files and where resulting DICOM files can be stored.')
     parser.add_argument('local_work_dir', type=Path, help='Path to local directory where intermediate results can be stored.')
-    parser.add_argument('--metadata', type=Path, help='Path to metadata CSV file.')
+    parser.add_argument('metadata', type=Path, help='Path to clinical metadata CSV file.')
     args = parser.parse_args()
 
     # Configuration
@@ -58,32 +68,45 @@ if __name__ == '__main__':
     for dir in [local_input, local_output, gaia_results_dir]: 
         dir.mkdir(parents=True, exist_ok=True)
     
-    # Conversion workflow
+    clinical_metadata = pd.read_csv(args.metadata, delimiter=';')
+    clinical_metadata.set_index('patient_id', inplace=True)
+
     for gaia_mrxs_file in sorted(args.gaia_work_dir.rglob('*_bm.mrxs')): 
-        
         # Check if already converted
         if os.path.exists(gaia_results_dir.joinpath(gaia_mrxs_file.name).with_suffix('')):
             with open(log_file, 'a') as log: 
                 log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - Already converted {gaia_mrxs_file}. Continuing.\n')
             continue
-
+        
         local_mrxs_file = local_input.joinpath(gaia_mrxs_file.name)
         copy_mrxs_from_gaia(gaia_mrxs_file, local_mrxs_file)
-               
+
+        slide_id = gaia_mrxs_file.stem
+        patient_id = slide_id.split('_')[0]
+        mrxs_properties = get_mrxs_slide_properties(local_mrxs_file)
+        slide_metadata = build_metadata(slide_id=slide_id, 
+                                        patient_id=patient_id, 
+                                        mrxs_metadata=mrxs_properties, 
+                                        clinical_data=clinical_metadata)    
+        print(slide_metadata)
         converted_dicom_dir = local_output.joinpath(local_mrxs_file.stem)
         # Run in separate process to ensure release of RAM afterwards
-        p = Process(target=run_conversion, args=(local_mrxs_file, converted_dicom_dir))
+        p = Process(target=run_conversion, args=(local_mrxs_file, converted_dicom_dir, slide_metadata))
         p.start()
         p.join()
 
-        manual_metadata_adding(patient_age='018M', 
-                               aquisition_duration=300, 
-                               primary_diagnoses_code_seq='bla', 
-                               admitting_diagnoses_description='bla', 
-                               accession_number='patient id',
-                               clinical_trial_coord_center='bli', 
-                               clinical_trial_protocol_name='bla', 
-                               clinical_trial_sponsor='blub', 
+        # Add additional metadata not automatically accessible during conversion
+        slide_id = gaia_mrxs_file.stem
+        patient_id = slide_id.split('_')[0]
+        aquisition_duration = find_property_by_suffix(mrxs_properties, 'scanning_time_in_sec')
+        
+        manual_metadata_adding(patient_age=clinical_metadata.loc[patient_id]['age'], 
+                               aquisition_duration=aquisition_duration, 
+                               primary_diagnoses_code_seq=clinical_metadata.loc[patient_id]['ncit_concept_code'], 
+                               admitting_diagnoses_description=','.join([clinical_metadata.loc[patient_id]['leukemia_type'], clinical_metadata.loc[patient_id]['leukemia_subtype']]),  
+                               clinical_trial_coord_center='University Hospital Erlangen', 
+                               clinical_trial_protocol_name='BMDeep', 
+                               clinical_trial_sponsor='Fraunhofer MEVIS', 
                                dcm_files=list(converted_dicom_dir.iterdir()))
         
         copy_dcm_to_gaia(converted_dicom_dir, gaia_results_dir)
