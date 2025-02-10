@@ -9,7 +9,7 @@ from wsidicomizer.metadata import WsiDicomizerMetadata
 from datetime import datetime
 from multiprocessing import Process
 from typing import Dict, List
-from add_metadata import find_property_by_suffix, build_metadata, manual_metadata_adding
+from conversion_mirax_dicom.image_conversion.add_metadata import find_property_by_suffix, build_metadata, manual_metadata_adding
 
 
 def copy_mrxs_from_gaia(gaia_mrxs_path: Path, local_mrxs_path: Path) -> None:
