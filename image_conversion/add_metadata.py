@@ -1,9 +1,8 @@
 import openslide
 import pydicom 
 import pandas as pd 
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Dict, Tuple, Union
 
 from wsidicom.conceptcode import (
     AnatomicPathologySpecimenTypesCode,
@@ -95,25 +94,26 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
     ) 
 
 
-def manual_metadata_adding(patient_age: str, 
-                           aquisition_duration: str, 
-                           primary_diagnoses_code_seq: str, 
+def build_additional_metadata(patient_age: str, 
+                           aquisition_duration: float, 
+                           primary_diagnoses_code: str,
+                           primary_diagnoses_code_meaning: str,  
                            admitting_diagnoses_description: str, 
                            clinical_trial_coord_center: str, 
                            clinical_trial_protocol_name: str, 
-                           clinical_trial_sponsor: str, 
-                           dcm_files: List[Path]) -> None: 
+                           clinical_trial_sponsor: str) -> pydicom.Dataset: 
     
-    for dcm_file in dcm_files:
-        ds = pydicom.dcmread(dcm_file)
-        ds.PatientAge = patient_age 
-        ds.add_new([0x0020, 0x0012], 'IS', aquisition_duration) 
-        ds.add_new([0x0008, 0x1080], 'LO', admitting_diagnoses_description)
-        ds.add_new([0x0012, 0x0060], 'LO', clinical_trial_coord_center) 
-        ds.add_new([0x0012, 0x0021], 'LO', clinical_trial_protocol_name)
-        ds.add_new([0x0012, 0x0010], 'LO', clinical_trial_sponsor)
+    ds = pydicom.Dataset()
+    ds.PatientAge = patient_age 
+    ds.add_new([0x0018, 0x9073], 'FD', aquisition_duration) 
+    ds.add_new([0x0008, 0x1080], 'LO', admitting_diagnoses_description)
+    ds.add_new([0x0012, 0x0060], 'LO', clinical_trial_coord_center) 
+    ds.add_new([0x0012, 0x0021], 'LO', clinical_trial_protocol_name)
+    ds.add_new([0x0012, 0x0010], 'LO', clinical_trial_sponsor)
 
-        ds.diagnoses_code_seq = [pydicom.Dataset()]
-        ds.diagnoses_code_seq[0].add_new([0x0008, 0x1084], 'LO', primary_diagnoses_code_seq) # has to be updated        
+    ds.add_new([0x0008, 0x1084], 'SQ', [pydicom.Dataset()]) # add AdmittingDiagnosesCodeSequence
+    ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0100], 'SH', primary_diagnoses_code) # CodeValue
+    ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0102], 'SH', 'NCIt') # CodingSchemeDesignator
+    ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0104], 'LO', primary_diagnoses_code_meaning) # TODO: CodeMeaning        
         
-        ds.save_as(dcm_file, enforce_file_format=True)
+    return ds 
