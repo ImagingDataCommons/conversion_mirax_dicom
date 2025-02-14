@@ -1,8 +1,12 @@
 # MRXS to DICOM
-Code for BMDeep dataset conversion from MRXS to DICOM on a local machine, while retrieving actual data and returning converted results from/to a mounted server called Gaia.
+Code for BMDeep dataset conversion from MRXS to DICOM. 
+
+This repository includes:  
+1) code for image conversion to be run on a local machine, while retrieving actual data and returning converted results from/to a mounted server called Gaia.
+2) code for annotation conversion
 
 ## Requirements
-- pip install wsidicomizer 
+- see requirements.txt 
 - for verification: installation of dicom3tools
     1. wget https://dclunie.com/dicom3tools/workinprogress/dicom3tools_1.00.snapshot.20250128115421.tar.bz2
     2. bzcat <dicom3tools_1.00.snapshot.20250128115421.tar.bz2 | tar -xf -
@@ -16,9 +20,5 @@ Code for BMDeep dataset conversion from MRXS to DICOM on a local machine, while 
 
 ### Potential problems (identified by manual inspection)
 - Specimen UID different for each SOPInstance in Series -> should be the same
-- Default ICC profile valid? 
-- AnatomicPathologySpecimenTypesCode -> could not even find that attribute
-- Photometric Interpretation? 
-- Is compression method ISO_10918_1 fine? 
 - X Offset in Slide Coordinate System --> how can I check that? 
-- Are 10 DICOM levels too much? How can this be influenced during conversion? 
+- Are 10 DICOM levels too much? 
