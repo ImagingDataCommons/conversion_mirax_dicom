@@ -13,6 +13,7 @@ from data_utils import CellAnnotation
 
 def process_annotation(
     ann: CellAnnotation,
+    offset_due_to_conversion: int, 
     transformer: hd.spatial.ImageToReferenceTransformer,
     graphic_type: hd.ann.GraphicTypeValues,
     annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues
@@ -24,6 +25,10 @@ def process_annotation(
     ----------
     ann: CellAnnotation
         Single annotation. 
+    offset_due_to_conversion: int, 
+        Conversion of images from MIRAX to DICOM with wsidicomizer introduces an offset,
+        by which we need to shift the annotations to match the DICOM images. 
+        See https://github.com/imi-bigpicture/wsidicomizer/issues/56 for more information. 
     transformer: hd.spatial.ImageToReferenceTransformer
         Transformer object to map image coordinates to reference coordinates
         for the image.
@@ -121,9 +126,11 @@ def get_graphic_data(
     identifiers = []
     labels = []
 
+    print(source_image_metadata) 
     for ann in annotations:
         graphic_item, identifier, label = process_annotation(
             ann,
+            offset_due_to_conversion, 
             transformer,
             graphic_type,
             annotation_coordinate_type,

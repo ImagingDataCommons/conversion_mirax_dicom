@@ -9,8 +9,8 @@ from pydicom.sr.coding import Code
 #)
 
 # Basic Metadata
-manufacturer = 'Fraunhofer MEVIS'
-manufacturer_model_name = 'BMDeep'
+manufacturer = 'University hospital Erlangen and Fraunhofer MEVIS'
+manufacturer_model_name = 'BMDeep project'
 software_versions = 'tbd' #get_git_remote_url(simplify=True)
 device_serial_number = 'tbd' #get_git_commit_hash()
 
@@ -24,7 +24,7 @@ labels_dict = dict(
     finding_type=finding_types
 )
 
-# Algorithm Identification
+# Algorithm Identification -->manual 
 algorithm_identification = hd.AlgorithmIdentificationSequence(
     name='Fraunhofer MEVIS BMDeep',
     version='1.0',
