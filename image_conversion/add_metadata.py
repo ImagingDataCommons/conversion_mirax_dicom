@@ -1,5 +1,6 @@
 import openslide
 import pydicom 
+import json
 import pandas as pd 
 from pathlib import Path
 from datetime import datetime
@@ -33,6 +34,7 @@ def read_nci_thesaurus(path: Path) -> Dict[str, str]:
     ncit = df.set_index('Code')['Preferred Term'].to_dict()
     ncit['C3182'] = 'Acute Promyelocytic Leukemia with t(15;17)(q24.1;q21.2); PML-RARA' # manual adding of only code that is missing
     return ncit
+
 
 def find_property_by_suffix(properties: Dict, suffix: str) -> Union[str, None]:
     for key in properties.keys():
@@ -106,7 +108,8 @@ def build_additional_metadata(patient_age: str,
                            admitting_diagnoses_description: str, 
                            clinical_trial_coord_center: str, 
                            clinical_trial_protocol_name: str, 
-                           clinical_trial_sponsor: str) -> pydicom.Dataset: 
+                           clinical_trial_sponsor: str, 
+                           original_mirax_properties: dict) -> pydicom.Dataset: 
     
     ds = pydicom.Dataset()
     ds.PatientAge = patient_age 
@@ -115,10 +118,12 @@ def build_additional_metadata(patient_age: str,
     ds.add_new([0x0012, 0x0060], 'LO', clinical_trial_coord_center) 
     ds.add_new([0x0012, 0x0021], 'LO', clinical_trial_protocol_name)
     ds.add_new([0x0012, 0x0010], 'LO', clinical_trial_sponsor)
+    ds.add_new([0x0020, 0x4000], 'LT', json.dumps(original_mirax_properties))
 
     ds.add_new([0x0008, 0x1084], 'SQ', [pydicom.Dataset()]) # add AdmittingDiagnosesCodeSequence
     ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0100], 'SH', primary_diagnoses_code) # CodeValue
     ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0102], 'SH', 'NCIt') # CodingSchemeDesignator
-    ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0104], 'LO', primary_diagnoses_code_meaning) # TODO: CodeMeaning        
-        
+    ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0104], 'LO', primary_diagnoses_code_meaning) # CodeMeaning        
+
+
     return ds 

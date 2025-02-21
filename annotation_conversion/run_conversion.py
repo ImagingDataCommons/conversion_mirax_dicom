@@ -6,13 +6,10 @@ import logging
 import pandas as pd
 from pathlib import Path
 from time import time
-from typing import Any, Dict 
+from typing import Any, Dict, Union  
 
 from data_utils import CellAnnotation, preprocess_annotation_csvs, filter_cell_annotations
-from convert import (
-    get_graphic_data,
-    create_bulk_annotations,
-)
+from convert import get_graphic_data, create_bulk_annotations
 
 
 def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]: 
@@ -54,7 +51,7 @@ def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]:
     return data 
 
 
-def parse_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Dict[str, Any]: 
+def parse_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_step: Union[int, str]) -> Dict[str, Any]: 
     """ 
     Parses annotations from pd.DataFrame into a list of CellAnnotations. 
 
@@ -80,10 +77,14 @@ def parse_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Dict[s
     for _, row in annotations.iterrows(): 
         x_min, y_min = row['x_in_slide'], row['y_in_slide']
         x_max, y_max = x_min + row['cell_width'], y_min + row['cell_height']
+        if ann_step == 'consensus': 
+            cell_label = row['consensus_label']
+        else: 
+            cell_label = row['all_annotations'].split(',')[ann_step]
         ann.append(CellAnnotation(
             identifier=row['cell_id'], 
             bounding_box=(x_min, y_min, x_max, y_max), 
-            label=row['all_original_annotations'].split(',')[0]
+            label=cell_label
         ))
 
     data['ann'] = ann
@@ -179,7 +180,7 @@ def create_dcm_annotations(
     data: Dict[str, Any],
     graphic_type: str,
     annotation_coordinate_type: str,
-    output_dir: Path
+    output_dir: Path, 
     ) -> Dict[str, Any]:
 
     """
@@ -268,7 +269,8 @@ def create_dcm_annotations(
 
 def save_annotations(
     data: dict[str, Any],
-    output_dir: Path
+    output_dir: Path, 
+    ann_step: Union[int, str]
     ) -> None: 
 
     """
@@ -297,7 +299,7 @@ def save_annotations(
     slide_ann_dir.mkdir(exist_ok=True)
 
     try:
-        ann_path = f'{slide_ann_dir}/{slide_id}_ann.dcm'
+        ann_path = f'{slide_ann_dir}/{slide_id}_ann_step_{ann_step}.dcm'
         logging.info(f'Writing annotation to {str(ann_path)}.')
         data['ann_dcm'].save_as(ann_path)
 
@@ -340,10 +342,11 @@ def run(
         output_dir.mkdir(exist_ok=True)
     
     csv_cells = preprocess_annotation_csvs(csv_cells, csv_rois)
+
+    # TODO: take original or mapped labels? 
     orig = sorted(csv_cells['original_consensus_label'].dropna().unique())
     mapped = sorted(csv_cells['consensus_label'].dropna().unique())
     print(len(orig), len(mapped))
-
     for o in orig: 
         if o not in mapped: 
             print(o)
@@ -351,11 +354,15 @@ def run(
     for slide_id in os.listdir(source_image_root_dir): 
         slide_cells = filter_cell_annotations(csv_cells, slide_id)
         if len(slide_cells) > 0: 
-            data = get_source_image_metadata(source_image_root_dir/slide_id)
-            data = parse_annotations(data, slide_cells)
-            data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
-            data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)
-            save_annotations(data, output_dir)
+            # Loop over all the different steps / consensus 
+            max_ann_step = 6 # get maximal length  
+            ann_steps = range(max_ann_step).append('consensus')
+            for ann_step in ann_steps: 
+                data = get_source_image_metadata(source_image_root_dir/slide_id)
+                data = parse_annotations(data, slide_cells, ann_step)
+                data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
+                data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir) # add suffix indicating step of anntation process 
+                save_annotations(data, output_dir, ann_step)
 
 
 if __name__ == "__main__":
