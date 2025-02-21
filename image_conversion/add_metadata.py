@@ -1,8 +1,9 @@
 import openslide
 import pydicom 
 import pandas as pd 
+from pathlib import Path
 from datetime import datetime
-from typing import Dict, Tuple, Union
+from typing import Dict, Union
 
 from wsidicom.conceptcode import (
     AnatomicPathologySpecimenTypesCode,
@@ -23,15 +24,22 @@ from wsidicom.metadata import (
     SlideSample,
     Specimen,
     Staining,
-    Study,
 )
 from wsidicomizer.metadata import WsiDicomizerMetadata
+
+
+def read_nci_thesaurus(path: Path) -> Dict[str, str]: 
+    df = pd.read_csv(path, sep=';', encoding="ISO-8859-1")
+    ncit = df.set_index('Code')['Preferred Term'].to_dict()
+    ncit['C3182'] = 'Acute Promyelocytic Leukemia with t(15;17)(q24.1;q21.2); PML-RARA' # manual adding of only code that is missing
+    return ncit
 
 def find_property_by_suffix(properties: Dict, suffix: str) -> Union[str, None]:
     for key in properties.keys():
         if key.lower().endswith(suffix):
             return properties[key]
     return None
+
 
 def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._PropertyMap, clinical_data: pd.DataFrame) -> WsiDicomizerMetadata: 
 
@@ -52,8 +60,6 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
     optical_path = OpticalPath(
         objective=objective
     )
-
-    study = Study(accession_number=patient_id[:8]) # SH thus take only first 8 characters 
      
     patient = Patient(
         identifier=patient_id, 
@@ -86,7 +92,6 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
 
     return WsiDicomizerMetadata(
         image=image,
-        study=study,
         patient=patient,
         equipment=equipment,
         optical_paths=[optical_path],

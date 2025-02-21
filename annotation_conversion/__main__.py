@@ -340,6 +340,13 @@ def run(
         output_dir.mkdir(exist_ok=True)
     
     csv_cells = preprocess_annotation_csvs(csv_cells, csv_rois)
+    orig = sorted(csv_cells['original_consensus_label'].dropna().unique())
+    mapped = sorted(csv_cells['consensus_label'].dropna().unique())
+    print(len(orig), len(mapped))
+
+    for o in orig: 
+        if o not in mapped: 
+            print(o)
 
     for slide_id in os.listdir(source_image_root_dir): 
         slide_cells = filter_cell_annotations(csv_cells, slide_id)

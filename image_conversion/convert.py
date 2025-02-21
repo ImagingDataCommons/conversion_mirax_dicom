@@ -11,7 +11,7 @@ from datetime import datetime
 from multiprocessing import Process
 from typing import Dict, List
 
-from add_metadata import find_property_by_suffix, build_metadata, build_additional_metadata
+from add_metadata import read_nci_thesaurus, find_property_by_suffix, build_metadata, build_additional_metadata
 
 
 def copy_mrxs_from_gaia(gaia_mrxs_path: Path, local_mrxs_path: Path) -> None:
@@ -74,6 +74,8 @@ if __name__ == '__main__':
     clinical_metadata = pd.read_csv(args.metadata, delimiter=';')
     clinical_metadata.set_index('patient_id', inplace=True)
 
+    nci_thesaurus = read_nci_thesaurus('NCIt_Neoplasm_Core_Terminology_sep.csv')
+
     for gaia_mrxs_file in sorted(args.gaia_work_dir.rglob('*_bm.mrxs')): 
         # Check if already converted
         if os.path.exists(gaia_results_dir.joinpath(gaia_mrxs_file.name).with_suffix('')):
@@ -101,7 +103,7 @@ if __name__ == '__main__':
             patient_age=clinical_metadata.loc[patient_id]['age'], 
             aquisition_duration=aquisition_duration, 
             primary_diagnoses_code=clinical_metadata.loc[patient_id]['ncit_concept_code'],
-            primary_diagnoses_code_meaning='tbd',  
+            primary_diagnoses_code_meaning=nci_thesaurus[clinical_metadata.loc[patient_id]['ncit_concept_code']],  
             admitting_diagnoses_description=','.join([clinical_metadata.loc[patient_id]['leukemia_type'], clinical_metadata.loc[patient_id]['leukemia_subtype']]),  
             clinical_trial_coord_center='University Hospital Erlangen', 
             clinical_trial_protocol_name='BMDeep', 
