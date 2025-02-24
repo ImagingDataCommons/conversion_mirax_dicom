@@ -40,25 +40,23 @@ def clean_up(files_or_dirs: List[Path]) -> None:
                 os.remove(path)
 
 
-if __name__ == '__main__': 
-    parser = argparse.ArgumentParser(description='Run BMDeep dataset conversion from MRXS to DICOM on a local machine, but retrieving dataset from mounted server.') 
-    parser.add_argument('gaia_work_dir', type=Path, help='Path to directory on Gaia which should be searched for MRXS files and where resulting DICOM files can be stored.')
-    parser.add_argument('local_work_dir', type=Path, help='Path to local directory where intermediate results can be stored.')
-    parser.add_argument('metadata', type=Path, help='Path to clinical metadata CSV file.')
-    args = parser.parse_args()
-
+def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
+    ''' Function to run complete image conversion pipeline '''
+    
     # Configuration
-    local_input = args.local_work_dir.joinpath('be_converted')
-    local_output = args.local_work_dir.joinpath('is_converted')
-    log_file = args.local_work_dir.joinpath('log.txt')
-    gaia_results_dir = args.gaia_work_dir.joinpath('bmdeep_DICOM_converted') 
+    local_input = local_work_dir.joinpath('be_converted')
+    local_output = local_work_dir.joinpath('is_converted')
+    log_file = local_work_dir.joinpath('log.txt')
+    gaia_results_dir = gaia_work_dir.joinpath('bmdeep_DICOM_converted') 
     for dir in [local_input, local_output, gaia_results_dir]: 
         dir.mkdir(parents=True, exist_ok=True)
-    
-    clinical_metadata = pd.read_csv(args.metadata, delimiter=';')
+
+    # Read clinical metadata and NCI Thesaurus
+    clinical_metadata = pd.read_csv(metadata, delimiter=';')
     clinical_metadata.set_index('patient_id', inplace=True)
     nci_thesaurus = read_nci_thesaurus(Path(__file__).with_name('NCIt_Neoplasm_Core_Terminology.csv'))
 
+    # Conversion loop
     for gaia_mrxs_file in sorted(args.gaia_work_dir.rglob('*_bm.mrxs')): 
         # Check if already converted
         if os.path.exists(gaia_results_dir.joinpath(gaia_mrxs_file.name).with_suffix('')):
@@ -91,7 +89,7 @@ if __name__ == '__main__':
             admitting_diagnoses_description=','.join([clinical_metadata.loc[patient_id]['leukemia_type'], clinical_metadata.loc[patient_id]['leukemia_subtype']]),  
             clinical_trial_coord_center='University Hospital Erlangen', 
             clinical_trial_protocol_name='BMDeep', 
-            clinical_trial_sponsor='Fraunhofer MEVIS', 
+            clinical_trial_sponsor='Uni Hospital Erlangen, Fraunhofer MEVIS, Uni Erlangen-Nuremberg', 
             original_mirax_properties=mrxs_properties
         )
 
@@ -106,3 +104,16 @@ if __name__ == '__main__':
         clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
         with open(log_file, 'a') as log: 
             log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - Successfully converted {gaia_mrxs_file}\n')
+
+
+
+if __name__ == '__main__': 
+    parser = argparse.ArgumentParser(description='Run BMDeep dataset conversion from MRXS to DICOM on a local machine, but retrieving dataset from mounted server.') 
+    parser.add_argument('gaia_work_dir', type=Path, help='Path to directory on Gaia which should be searched for MRXS files and where resulting DICOM files can be stored.')
+    parser.add_argument('local_work_dir', type=Path, help='Path to local directory where intermediate results can be stored.')
+    parser.add_argument('metadata', type=Path, help='Path to clinical metadata CSV file.')
+    args = parser.parse_args()
+
+    run(args.local_work_dir, args.gaia_work_dir, args.metadata)
+    
+    
