@@ -299,7 +299,10 @@ def save_annotations(
     slide_ann_dir.mkdir(exist_ok=True)
 
     try:
-        ann_path = f'{slide_ann_dir}/{slide_id}_ann_step_{ann_step+1}.dcm'
+        # Increase ann_step to be 1-indexed instead of 0-indexed in the output files 
+        if type(ann_step) == 'int': 
+            ann_step += 1
+        ann_path = f'{slide_ann_dir}/{slide_id}_ann_step_{ann_step}.dcm'
         logging.info(f'Writing annotation to {str(ann_path)}.')
         data['ann_dcm'].save_as(ann_path)
 
