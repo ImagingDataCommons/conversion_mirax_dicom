@@ -5,14 +5,14 @@ import highdicom as hd
 from pydicom import Dataset
 from pydicom.sr.codedict import codes
 from shapely.geometry import box
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import metadata_config
-from data_utils import CellAnnotation 
+from data_utils import CellAnnotation, ROIAnnotation
 
 
 def process_annotation(
-    ann: CellAnnotation,
+    ann: Union[CellAnnotation, ROIAnnotation],
     offset_due_to_conversion: int, 
     transformer: hd.spatial.ImageToReferenceTransformer,
     graphic_type: hd.ann.GraphicTypeValues,
@@ -23,7 +23,7 @@ def process_annotation(
 
     Parameters
     ----------
-    ann: CellAnnotation
+    ann: CellAnnotation, ROIAnnotation
         Single annotation. 
     offset_due_to_conversion: int, 
         Conversion of images from MIRAX to DICOM with wsidicomizer introduces an offset,
@@ -45,12 +45,6 @@ def process_annotation(
     graphic_data: np.ndarray
         Numpy array of float32 coordinates to include in the Bulk Microscopy
         Simple Annotations.
-    cell_identifier: int
-        Identifier for cell annotation taken as is from input. 
-    roi_identifier: int
-        Identifier for ROI the cell annotation is part of. 
-    label: str
-        Label taken as is from input.
     """      
     bounding_box = box(*ann.bounding_box)
 
@@ -75,7 +69,7 @@ def process_annotation(
     if use_3d:
         graphic_data = transformer(graphic_data)
 
-    return graphic_data.astype(np.float32), ann.cell_identifier, ann.roi_identifier, ann.label
+    return graphic_data.astype(np.float32)
 
 
 def get_graphic_data(
@@ -133,7 +127,7 @@ def get_graphic_data(
 
     offset_due_to_conversion=3
     for ann in annotations:
-        graphic_item, cell_identifier, roi_identifier, label = process_annotation(
+        graphic_item = process_annotation(
             ann,
             offset_due_to_conversion, 
             transformer,
@@ -142,9 +136,9 @@ def get_graphic_data(
         )
 
         graphic_data.append(graphic_item)
-        cell_identifiers.append(cell_identifier)
-        roi_identifiers.append(roi_identifier)
-        labels.append(label)
+        cell_identifiers.append(ann.cell_identifier)
+        roi_identifiers.append(ann.roi_identifier)
+        labels.append(ann.label)
 
     logging.info(f'Parsed {len(graphic_data)} annotations.')
 

@@ -3,12 +3,18 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import List
 
+
 @dataclass
 class CellAnnotation:
     cell_identifier: int
     roi_identifier: int 
     bounding_box: tuple # xmin, ymin, xmax, ymax 
     label: str
+
+@dataclass
+class ROIAnnotation: 
+    identifier: int
+    bounding_box: tuple 
 
 
 def preprocess_annotation_csvs(cells_csv: Path, roi_csv: Path) -> pd.DataFrame: 
@@ -21,8 +27,8 @@ def preprocess_annotation_csvs(cells_csv: Path, roi_csv: Path) -> pd.DataFrame:
     return pd.merge(cells, rois[['id', 'slide_id']], 
                     left_on='rocellboxing_id', 
                     right_on = 'id', 
-                    how='left').drop('id', axis=1)
+                    how='left').drop('id', axis=1), rois 
 
 
-def filter_cell_annotations(annotations: pd.DataFrame, slide_id: str) -> List[CellAnnotation]: 
+def filter_slide_annotations(annotations: pd.DataFrame, slide_id: str) -> List[CellAnnotation]: 
     return annotations[annotations['slide_id'] == slide_id] 
