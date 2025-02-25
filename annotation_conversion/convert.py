@@ -5,7 +5,7 @@ import highdicom as hd
 from pydicom import Dataset
 from pydicom.sr.codedict import codes
 from shapely.geometry import box
-from typing import List, Tuple, Union
+from typing import List, Union
 
 import metadata_config
 from data_utils import CellAnnotation, ROIAnnotation
@@ -17,7 +17,7 @@ def process_annotation(
     transformer: hd.spatial.ImageToReferenceTransformer,
     graphic_type: hd.ann.GraphicTypeValues,
     annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues
-    ) -> Tuple[np.ndarray, int, str]:
+    ) -> np.ndarray:
     """
     Process a single annotation to be in the format required for DICOM ANN files.
 
@@ -77,7 +77,7 @@ def get_graphic_data(
     source_image_metadata: Dataset,
     graphic_type: str = 'POLYGON',
     annotation_coordinate_type: str = 'SCOORD'
-    ) -> Tuple[list[np.ndarray], list[int], list[str]]:
+    ) -> List[np.ndarray]:
     """
     Parse annotations to construct graphic data.
 
@@ -102,13 +102,7 @@ def get_graphic_data(
     graphic_data: list[np.ndarray]
         List of graphic data as numpy arrays in the format required for the
         MicroscopyBulkSimpleAnnotations object. These are correctly formatted
-        for the requested graphic type and annotation coordinate type.
-    cell_identifiers: list[int]
-        Identifier for each cell annotation taken as is from input. 
-    roi_identifiers: list[int]
-        Identifier for each cell annotation indicating which ROI they are part of.
-    labels: list[str]
-        Label for each cell annotation taken as is from input. 
+        for the requested graphic type and annotation coordinate type. 
     """  
     graphic_type = hd.ann.GraphicTypeValues[graphic_type]
     annotation_coordinate_type = hd.ann.AnnotationCoordinateTypeValues[
@@ -121,10 +115,6 @@ def get_graphic_data(
     )
 
     graphic_data = []
-    cell_identifiers = []
-    roi_identifiers = []
-    labels = []
-
     offset_due_to_conversion=3
     for ann in annotations:
         graphic_item = process_annotation(
@@ -135,17 +125,89 @@ def get_graphic_data(
             annotation_coordinate_type,
         )
 
-        graphic_data.append(graphic_item)
-        cell_identifiers.append(ann.cell_identifier)
-        roi_identifiers.append(ann.roi_identifier)
-        labels.append(ann.label)
-
+        graphic_data.append(graphic_item)   
     logging.info(f'Parsed {len(graphic_data)} annotations.')
 
-    return graphic_data, cell_identifiers, roi_identifiers, labels
+    return graphic_data
 
 
-def create_bulk_annotations(
+def create_bulk_annotations_for_rois(
+    source_image_metadata: Dataset,
+    graphic_data: list[np.ndarray],
+    identifiers: list[int],
+    graphic_type: str = 'POLYGON',
+    annotation_coordinate_type: str = 'SCOORD'
+    ) -> hd.ann.MicroscopyBulkSimpleAnnotations:
+    """
+    Create DICOM Microscopy Bulk Simple Annotation objects. 
+
+    Parameters
+    ----------
+    source_image_metadata: pydicom.Dataset
+        Metadata of the image from which annotations were derived.
+    graphic_data: list[np.ndarray]
+        Pre-computed graphic data for the graphic type and annotation
+        coordinate type.
+    identifiers: list[int]
+        Identifier for each ROI annotation taken as is from input. 
+    graphic_type: str, optional 
+        Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
+        or 'POINT'.
+    annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues, optional
+        Store coordinates in the Bulk Microscopy Bulk Simple Annotations in the
+        (3D) frame of reference (SCOORD3D), or the (2D) total pixel matrix
+        (SCOORD, default).
+
+    Returns
+    -------
+    annotation: hd.ann.MicroscopyBulkSimpleAnnotations:
+        DICOM bulk microscopy annotation encoding the original annotations in
+        vector format.
+
+    """
+    graphic_type = hd.ann.GraphicTypeValues[graphic_type]
+    annotation_coordinate_type = hd.ann.AnnotationCoordinateTypeValues[
+        annotation_coordinate_type
+    ]
+    
+    group = hd.ann.AnnotationGroup(
+        number=1,
+        uid=hd.UID(),
+        label='tbd', # TODO 
+        annotated_property_category=metadata_config.labels_dict['finding_category'][0], # TODO
+        annotated_property_type=metadata_config.labels_dict['finding_category'][0], # TODO
+        graphic_type=graphic_type,
+        graphic_data=graphic_data,
+        algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.AUTOMATIC,
+        algorithm_identification=metadata_config.algorithm_identification,
+        measurements=[
+            hd.ann.Measurements(
+                name=codes.SCT.Area,
+                unit=codes.UCUM.SquareMicrometer,
+                values=np.array(identifiers),
+            )
+        ],
+    )
+    
+    annotations = hd.ann.MicroscopyBulkSimpleAnnotations(
+        source_images=[source_image_metadata],
+        annotation_coordinate_type=annotation_coordinate_type,
+        annotation_groups=[group],
+        series_instance_uid=hd.UID(),
+        series_number=204, # TODO 
+        sop_instance_uid=hd.UID(),
+        instance_number=1,
+        manufacturer=metadata_config.manufacturer,
+        manufacturer_model_name=metadata_config.manufacturer_model_name,
+        software_versions=metadata_config.software_versions,
+        device_serial_number=metadata_config.device_serial_number,
+    )
+    annotations.add(metadata_config.other_trials_seq_element)
+
+    return annotations
+
+
+def create_bulk_annotations_for_cells(
     source_image_metadata: Dataset,
     graphic_data: list[np.ndarray],
     cell_identifiers: list[int],
@@ -226,7 +288,7 @@ def create_bulk_annotations(
         annotation_coordinate_type=annotation_coordinate_type,
         annotation_groups=groups,
         series_instance_uid=hd.UID(),
-        series_number=204,
+        series_number=204, # TODO
         sop_instance_uid=hd.UID(),
         instance_number=1,
         manufacturer=metadata_config.manufacturer,

@@ -10,7 +10,7 @@ from time import time
 from typing import Any, Dict, Union  
 
 from data_utils import CellAnnotation, ROIAnnotation, preprocess_annotation_csvs, filter_slide_annotations
-from convert import get_graphic_data, create_bulk_annotations
+from convert import get_graphic_data, create_bulk_annotations_for_rois, create_bulk_annotations_for_cells
 
 
 def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]: 
@@ -52,6 +52,44 @@ def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]:
     return data 
 
 
+def parse_roi_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Dict[str, Any]: 
+    """ 
+    Parses annotations from pd.DataFrame into a list of ROIAnnotations. 
+
+    Parameters
+    ----------
+    data: dict[str, Any]
+        Input data packed into a dict, including at least:
+        - slide_id: str
+            Slide ID for the case.
+        - source_image: pydicom.Dataset
+            Base level source image for this case.
+
+    Returns
+    -------
+    data: dict[str, Any]
+        Output data packed into a dict. This will contain the same keys as
+        the input dictionary, plus the following additional keys:
+        - ann_type: str
+            Whether it's ROI or cell annotations.
+        - ann: list[ROIAnnotation]
+            List of annotations. 
+    """
+
+    ann = []
+    for _, row in annotations.iterrows(): 
+        x_min, y_min = row['x_in_slide'], row['y_in_slide']
+        x_max, y_max = x_min + row['width'], y_min + row['height']
+        ann.append(ROIAnnotation(
+            identifier=row['id'], 
+            bounding_box=(x_min, y_min, x_max, y_max), 
+        ))
+
+    data['ann_type'] = 'roi'
+    data['ann'] = ann
+    return data
+
+
 def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_step: Union[int, str]) -> Dict[str, Any]: 
     """ 
     Parses annotations from pd.DataFrame into a list of CellAnnotations. 
@@ -70,6 +108,8 @@ def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_
     data: dict[str, Any]
         Output data packed into a dict. This will contain the same keys as
         the input dictionary, plus the following additional keys:
+        - ann_type: str
+            Whether it's ROI or cell annotations.
         - ann: list[CellAnnotation]
             List of annotations. 
     """
@@ -89,42 +129,7 @@ def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_
             label=cell_label
         ))
 
-    data['ann'] = ann
-    return data
-
-
-def parse_roi_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Dict[str, Any]: 
-    """ 
-    Parses annotations from pd.DataFrame into a list of ROIAnnotations. 
-
-    Parameters
-    ----------
-    data: dict[str, Any]
-        Input data packed into a dict, including at least:
-        - slide_id: str
-            Slide ID for the case.
-        - source_image: pydicom.Dataset
-            Base level source image for this case.
-
-    Returns
-    -------
-    data: dict[str, Any]
-        Output data packed into a dict. This will contain the same keys as
-        the input dictionary, plus the following additional keys:
-        - ann: list[ROIAnnotation]
-            List of annotations. 
-    """
-
-    ann = []
-    for _, row in annotations.iterrows(): 
-        x_min, y_min = row['x_in_slide'], row['y_in_slide']
-        x_max, y_max = x_min + row['width'], y_min + row['height']
-        
-        ann.append(ROIAnnotation(
-            identifier=row['id'], 
-            bounding_box=(x_min, y_min, x_max, y_max), 
-        ))
-
+    data['ann_type'] = 'cell'
     data['ann'] = ann
     return data
 
@@ -137,7 +142,7 @@ def parse_annotations_to_graphic_data(
     ) -> Dict[str, Any]:
 
     """
-    Parse annotations to highdicom graphic data.
+    Parse cell or ROI annotations to highdicom graphic data.
 
     Parameters
     ----------
@@ -147,8 +152,8 @@ def parse_annotations_to_graphic_data(
             Slide ID for the case.
         - source_image: pydicom.Dataset
             Base level source image for this case.
-        - ann: list[CellAnnotations]
-            List of cell annotations. 
+        - ann: Union[list[CellAnnotations], list[ROIAnnotations]]
+            List of cell annotations or ROI annotations. 
     graphic_type: hd.ann.GraphicTypeValues
         Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
         or 'POINT' (will be bounding box centroid). 
@@ -170,13 +175,20 @@ def parse_annotations_to_graphic_data(
             the MicroscopyBulkSimpleAnnotations object. These are correctly
             formatted for the requested graphic type and annotation
             coordinate type.
+        
+        In case of ROI annotations, these keys are also added: 
+        - identifiers: list[int]
+            Identifier for each of the ROI.
+
+        In case of cell annotations, these keys are added: 
         - cell_identifiers: list[int]
             Identifier for each of the bounding boxes. The identifier is a consecutive number 
             going over the whole dataset (not only a single slide).
         - roi_identifiers: list[int]
             Identifier for each of the bounding boxes. The identifier indicates the ROI that this 
             bounding box is contained in, i.e. in which ROI the cell annotation can be found. 
-
+        - labels: list[str]
+            Label for each bounding box.
     """
 
     errors = []
@@ -185,7 +197,7 @@ def parse_annotations_to_graphic_data(
     start_time = time()
     logging.info(f'Parsing annotations for slide: {slide_id}')
     try:
-        graphic_data, cell_identifiers, roi_identifiers, labels = get_graphic_data(
+        graphic_data = get_graphic_data(
             annotations=data['ann'],
             source_image_metadata=data['source_image'],
             graphic_type=graphic_type,
@@ -209,12 +221,15 @@ def parse_annotations_to_graphic_data(
     logging.info(
         f'Processed annotations for slide {slide_id} in {duration:.2f}s'
     )
-
-    del data['ann'] # save memory 
+    
     data['graphic_data'] = graphic_data
-    data['cell_identifiers'] = cell_identifiers
-    data['roi_identifiers'] = roi_identifiers
-    data['labels'] = labels
+    if isinstance(data['ann'][0], ROIAnnotation): 
+        data['identifiers'] = [ann.identifier for ann in data['ann']]
+    else: 
+        data['cell_identifiers'] = [ann.cell_identifier for ann in data['ann']]
+        data['roi_identifiers'] = [ann.roi_identifier for ann in data['ann']]
+        data['labels'] = [ann.label for ann in data['ann']]
+    del data['ann'] # save some memory
     return data
 
 
@@ -241,6 +256,10 @@ def create_dcm_annotations(
             coordinate type.
         - source_image: pydicom.Dataset
             Base level source image for this case.
+        In case of ROI annotations, also including: 
+        - identifiers: list[str]
+            Identifier for each ROI. 
+        In case of cell annotations, also including: 
         - cell_identifiers: list[int]
             Identifier for each of the bounding boxes. The identifier is a consecutive number 
             going over the whole dataset (not only a single slide).
@@ -277,15 +296,24 @@ def create_dcm_annotations(
     logging.info(f'Creating annotation for slide: {slide_id}')
 
     try:
-        ann_dcm = create_bulk_annotations(
-            source_image_metadata=data['source_image'],
-            graphic_data=data['graphic_data'],
-            cell_identifiers=data['cell_identifiers'],
-            roi_identifiers=data['roi_identifiers'],
-            labels=data['labels'],
-            graphic_type=graphic_type,
-            annotation_coordinate_type=annotation_coordinate_type
-        )
+        if data['ann_type'] == 'roi':
+            ann_dcm = create_bulk_annotations_for_rois(
+                source_image_metadata=data['source_image'],
+                graphic_data=data['graphic_data'],
+                identifiers=data['identifiers'],
+                graphic_type=graphic_type,
+                annotation_coordinate_type=annotation_coordinate_type
+            )
+        else:  
+            ann_dcm = create_bulk_annotations_for_cells(
+                source_image_metadata=data['source_image'],
+                graphic_data=data['graphic_data'],
+                cell_identifiers=data['cell_identifiers'],
+                roi_identifiers=data['roi_identifiers'],
+                labels=data['labels'],
+                graphic_type=graphic_type,
+                annotation_coordinate_type=annotation_coordinate_type
+            )
     except Exception as e:
         logging.error(f"Error {str(e)}")
         errors.append(
@@ -305,19 +333,22 @@ def create_dcm_annotations(
         f'Created annotation for for slide {slide_id} in {duration:.2f}s'
     )
 
-    
-    del data['graphic_data'] # Save some memory
-    del data['cell_identifiers'] # Save some memory
-    del data['roi_identifiers'] # Save some memory
-    del data['labels'] # Save some memory
     data['ann_dcm'] = ann_dcm
+    if data['ann_type'] == 'roi': 
+        del data['identifiers']
+    else: 
+        del data['graphic_data'] # Save some memory
+        del data['cell_identifiers'] # Save some memory
+        del data['roi_identifiers'] # Save some memory
+        del data['labels'] # Save some memory
+    
     return data
 
 
 def save_annotations(
     data: dict[str, Any],
     output_dir: Path, 
-    ann_step: Union[int, str]
+    ann_step: Union[int, str] = None
     ) -> None: 
 
     """
@@ -335,6 +366,8 @@ def save_annotations(
 
     output_dir: pathlib.Path
         A local output directory to store the downloaded files and error logs. 
+    ann_step: Union[int, str, None]
+        Annotation step in case of cell annotations. 
     """
     errors = []
     slide_id = data['slide_id']
@@ -346,10 +379,14 @@ def save_annotations(
     slide_ann_dir.mkdir(exist_ok=True)
 
     try:
-        # Increase ann_step to be 1-indexed instead of 0-indexed in the output files 
-        if type(ann_step) == 'int': 
-            ann_step += 1
-        ann_path = f'{slide_ann_dir}/{slide_id}_ann_step_{ann_step}.dcm'
+        if data['ann_type'] == 'roi': 
+            ann_path = f'{slide_ann_dir}/{slide_id}_rois.dcm'
+        else: 
+            # Increase ann_step to be 1-indexed instead of 0-indexed in the output files 
+            if isinstance(ann_step, int): 
+                ann_step += 1
+            ann_path = f'{slide_ann_dir}/{slide_id}_cells_ann_step_{ann_step}.dcm'
+        
         logging.info(f'Writing annotation to {str(ann_path)}.')
         data['ann_dcm'].save_as(ann_path)
 
@@ -399,10 +436,10 @@ def run(
         # Create DICOM objects for ROI annotations 
         slide_rois = filter_slide_annotations(rois, slide_id)
         if len(slide_rois) > 0: 
-            data = parse_annotations(image_data, slide_rois)
+            data = parse_roi_annotations(image_data, slide_rois)
             data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
             data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)  
-            save_annotations(data, output_dir, ann_step)
+            save_annotations(data, output_dir)
 
         # Create DICOM objects for cell annotations
         slide_cells = filter_slide_annotations(cells, slide_id)
@@ -412,13 +449,13 @@ def run(
             ann_steps = list(range(slide_cells['ann_steps'].max()))
             for ann_step in ann_steps: 
                 slide_cells_this_ann_step = slide_cells[slide_cells['ann_steps'] > ann_step] 
-                data = parse_annotations(image_data, slide_cells_this_ann_step, ann_step)
+                data = parse_cell_annotations(image_data, slide_cells_this_ann_step, ann_step)
                 data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
                 data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)  
                 save_annotations(data, output_dir, ann_step)
 
             # Also encode the final consensus 
-            data = parse_annotations(image_data, slide_cells, ann_step='consensus')
+            data = parse_cell_annotations(image_data, slide_cells, ann_step='consensus')
             data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
             data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)
             save_annotations(data, output_dir, ann_step='consensus')
