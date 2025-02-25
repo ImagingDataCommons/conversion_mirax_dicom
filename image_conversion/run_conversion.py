@@ -42,7 +42,7 @@ def clean_up(files_or_dirs: List[Path]) -> None:
 
 def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
     ''' Function to run complete image conversion pipeline '''
-    
+
     # Configuration
     local_input = local_work_dir.joinpath('be_converted')
     local_output = local_work_dir.joinpath('is_converted')
@@ -90,7 +90,7 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
             clinical_trial_coord_center='University Hospital Erlangen', 
             clinical_trial_protocol_name='BMDeep', 
             clinical_trial_sponsor='Uni Hospital Erlangen, Fraunhofer MEVIS, Uni Erlangen-Nuremberg', 
-            original_mirax_properties=mrxs_properties
+            original_mirax_properties='tbd'#mrxs_properties
         )
 
         converted_dicom_dir = local_output.joinpath(local_mrxs_file.stem)
