@@ -5,9 +5,11 @@ from typing import List
 
 @dataclass
 class CellAnnotation:
-    identifier: int
+    cell_identifier: int
+    roi_identifier: int 
     bounding_box: tuple # xmin, ymin, xmax, ymax 
     label: str
+
 
 def preprocess_annotation_csvs(cells_csv: Path, roi_csv: Path) -> pd.DataFrame: 
     """ 

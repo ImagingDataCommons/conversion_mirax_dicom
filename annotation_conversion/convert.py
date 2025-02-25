@@ -45,9 +45,11 @@ def process_annotation(
     graphic_data: np.ndarray
         Numpy array of float32 coordinates to include in the Bulk Microscopy
         Simple Annotations.
-    identifier: list[int]
-        Identifier taken as is from input. 
-    labels: list[str]
+    cell_identifier: int
+        Identifier for cell annotation taken as is from input. 
+    roi_identifier: int
+        Identifier for ROI the cell annotation is part of. 
+    label: str
         Label taken as is from input.
     """      
     bounding_box = box(*ann.bounding_box)
@@ -73,7 +75,7 @@ def process_annotation(
     if use_3d:
         graphic_data = transformer(graphic_data)
 
-    return graphic_data.astype(np.float32), ann.identifier, ann.label
+    return graphic_data.astype(np.float32), ann.cell_identifier, ann.roi_identifier, ann.label
 
 
 def get_graphic_data(
@@ -107,10 +109,12 @@ def get_graphic_data(
         List of graphic data as numpy arrays in the format required for the
         MicroscopyBulkSimpleAnnotations object. These are correctly formatted
         for the requested graphic type and annotation coordinate type.
-    identifiers: list[int]
-        Identifier for each annotation taken as is from input. 
+    cell_identifiers: list[int]
+        Identifier for each cell annotation taken as is from input. 
+    roi_identifiers: list[int]
+        Identifier for each cell annotation indicating which ROI they are part of.
     labels: list[str]
-        Label for each annotation taken as is from input. 
+        Label for each cell annotation taken as is from input. 
     """  
     graphic_type = hd.ann.GraphicTypeValues[graphic_type]
     annotation_coordinate_type = hd.ann.AnnotationCoordinateTypeValues[
@@ -123,12 +127,13 @@ def get_graphic_data(
     )
 
     graphic_data = []
-    identifiers = []
+    cell_identifiers = []
+    roi_identifiers = []
     labels = []
 
     offset_due_to_conversion=3
     for ann in annotations:
-        graphic_item, identifier, label = process_annotation(
+        graphic_item, cell_identifier, roi_identifier, label = process_annotation(
             ann,
             offset_due_to_conversion, 
             transformer,
@@ -137,18 +142,20 @@ def get_graphic_data(
         )
 
         graphic_data.append(graphic_item)
-        identifiers.append(identifier)
+        cell_identifiers.append(cell_identifier)
+        roi_identifiers.append(roi_identifier)
         labels.append(label)
 
     logging.info(f'Parsed {len(graphic_data)} annotations.')
 
-    return graphic_data, identifiers, labels
+    return graphic_data, cell_identifiers, roi_identifiers, labels
 
 
 def create_bulk_annotations(
     source_image_metadata: Dataset,
     graphic_data: list[np.ndarray],
-    identifiers: list[int],
+    cell_identifiers: list[int],
+    roi_identifiers: list[int], 
     labels: list[str],
     graphic_type: str = 'POLYGON',
     annotation_coordinate_type: str = 'SCOORD'
@@ -163,8 +170,10 @@ def create_bulk_annotations(
     graphic_data: list[np.ndarray]
         Pre-computed graphic data for the graphic type and annotation
         coordinate type.
-    identifiers: list[int]
-        Identifier for each annotation taken as is from input. 
+    cell_identifiers: list[int]
+        Identifier for each cell annotation taken as is from input. 
+    roi_identifiers: list[int]
+        Identifier for each cell annotation indicating which ROI they are part of. 
     labels: list[str]
         Label for each annotation taken as is from input. 
     graphic_type: str, optional 
@@ -206,7 +215,12 @@ def create_bulk_annotations(
                     hd.ann.Measurements(
                         name=codes.SCT.Area,
                         unit=codes.UCUM.SquareMicrometer,
-                        values=np.array([identifiers[i] for i in indices]),
+                        values=np.array([cell_identifiers[i] for i in indices]),
+                    ), 
+                    hd.ann.Measurements(
+                        name=codes.SCT.Area,
+                        unit=codes.UCUM.SquareMicrometer,
+                        values=np.array([roi_identifiers[i] for i in indices]),
                     )
                 ],
             )

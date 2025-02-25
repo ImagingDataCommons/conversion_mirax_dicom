@@ -3,6 +3,7 @@ import os
 import datetime
 import pydicom 
 import logging
+import argparse
 import pandas as pd
 from pathlib import Path
 from time import time
@@ -82,7 +83,8 @@ def parse_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_step:
         else: 
             cell_label = row['all_annotations'].split(',')[ann_step]
         ann.append(CellAnnotation(
-            identifier=row['cell_id'], 
+            cell_identifier=row['cell_id'], 
+            roi_identifier=row['rocellboxing_id'],
             bounding_box=(x_min, y_min, x_max, y_max), 
             label=cell_label
         ))
@@ -132,9 +134,12 @@ def parse_annotations_to_graphic_data(
             the MicroscopyBulkSimpleAnnotations object. These are correctly
             formatted for the requested graphic type and annotation
             coordinate type.
-        - identifiers: list[int]
+        - cell_identifiers: list[int]
             Identifier for each of the bounding boxes. The identifier is a consecutive number 
             going over the whole dataset (not only a single slide).
+        - roi_identifiers: list[int]
+            Identifier for each of the bounding boxes. The identifier indicates the ROI that this 
+            bounding box is contained in, i.e. in which ROI the cell annotation can be found. 
 
     """
 
@@ -144,7 +149,7 @@ def parse_annotations_to_graphic_data(
     start_time = time()
     logging.info(f'Parsing annotations for slide: {slide_id}')
     try:
-        graphic_data, identifiers, labels = get_graphic_data(
+        graphic_data, cell_identifiers, roi_identifiers, labels = get_graphic_data(
             annotations=data['ann'],
             source_image_metadata=data['source_image'],
             graphic_type=graphic_type,
@@ -171,7 +176,8 @@ def parse_annotations_to_graphic_data(
 
     del data['ann'] # save memory 
     data['graphic_data'] = graphic_data
-    data['identifiers'] = identifiers
+    data['cell_identifiers'] = cell_identifiers
+    data['roi_identifiers'] = roi_identifiers
     data['labels'] = labels
     return data
 
@@ -199,9 +205,12 @@ def create_dcm_annotations(
             coordinate type.
         - source_image: pydicom.Dataset
             Base level source image for this case.
-        - identifiers: list[int]
+        - cell_identifiers: list[int]
             Identifier for each of the bounding boxes. The identifier is a consecutive number 
             going over the whole dataset (not only a single slide).
+        - roi_identifiers: list[int]
+            Identifier for each of the bounding boxes. The identifier indicates the ROI that this 
+            bounding box is contained in, i.e. in which ROI the cell annotation can be found. 
         - labels: list[str]
             Label for each bounding box. 
     graphic_type: str
@@ -235,7 +244,8 @@ def create_dcm_annotations(
         ann_dcm = create_bulk_annotations(
             source_image_metadata=data['source_image'],
             graphic_data=data['graphic_data'],
-            identifiers=data['identifiers'],
+            cell_identifiers=data['cell_identifiers'],
+            roi_identifiers=data['roi_identifiers'],
             labels=data['labels'],
             graphic_type=graphic_type,
             annotation_coordinate_type=annotation_coordinate_type
@@ -261,7 +271,8 @@ def create_dcm_annotations(
 
     
     del data['graphic_data'] # Save some memory
-    del data['identifiers'] # Save some memory
+    del data['cell_identifiers'] # Save some memory
+    del data['roi_identifiers'] # Save some memory
     del data['labels'] # Save some memory
     data['ann_dcm'] = ann_dcm
     return data
@@ -346,14 +357,6 @@ def run(
     
     csv_cells = preprocess_annotation_csvs(csv_cells, csv_rois)
 
-    # TODO: take original or mapped labels? 
-    orig = sorted(csv_cells['original_consensus_label'].dropna().unique())
-    mapped = sorted(csv_cells['consensus_label'].dropna().unique())
-    print(len(orig), len(mapped))
-    for o in orig: 
-        if o not in mapped: 
-            print(o)
-
     for slide_id in os.listdir(source_image_root_dir): 
         slide_cells = filter_cell_annotations(csv_cells, slide_id)
         if len(slide_cells) > 0: 
@@ -361,9 +364,9 @@ def run(
             slide_cells['ann_steps'] = slide_cells['all_annotations'].apply(lambda x: len(x.split(',')))
             ann_steps = list(range(slide_cells['ann_steps'].max()))
             for ann_step in ann_steps: 
-                slide_cells_ann_step = slide_cells[slide_cells['ann_steps'] > ann_step] 
+                slide_cells_this_ann_step = slide_cells[slide_cells['ann_steps'] > ann_step] 
                 data = get_source_image_metadata(source_image_root_dir/slide_id)
-                data = parse_annotations(data, slide_cells_ann_step, ann_step)
+                data = parse_annotations(data, slide_cells_this_ann_step, ann_step)
                 data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
                 data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)  
                 save_annotations(data, output_dir, ann_step)
@@ -375,9 +378,13 @@ def run(
             data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)
             save_annotations(data, output_dir, ann_step='consensus')
 
+
 if __name__ == "__main__":
-    data_dir = Path('/home/dschacherer/bmdeep_conversion/data/bmdeep_DICOM_converted')
-    cell_csv = Path('/home/dschacherer/bmdeep_conversion/data/cells.csv')
-    roi_csv = Path('/home/dschacherer/bmdeep_conversion/data/rois.csv')
-    run(cell_csv, roi_csv, data_dir, data_dir)
+    parser = argparse.ArgumentParser(description='Run BMDeep dataset conversion from MRXS to DICOM on a local machine, but retrieving dataset from mounted server.') 
+    parser.add_argument('image_data_dir', type=Path, help='Path to folder with converted DICOM image files. Each slide is supposed to be in a separate folder named after the slide ID.')
+    parser.add_argument('cell_csv', type=Path, help='Path to CSV file holding cell annotation information.')
+    parser.add_argument('roi_csv', type=Path, help='Path to CSV file holding ROI annotation information.')
+    args = parser.parse_args()
+
+    run(args.cell_csv, args.roi_csv, source_image_root_dir=args.data_dir, output_dir=args.data_dir)
 
