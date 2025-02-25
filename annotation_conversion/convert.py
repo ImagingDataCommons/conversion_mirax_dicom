@@ -126,7 +126,7 @@ def get_graphic_data(
     identifiers = []
     labels = []
 
-    print(source_image_metadata) 
+    offset_due_to_conversion=3
     for ann in annotations:
         graphic_item, identifier, label = process_annotation(
             ann,

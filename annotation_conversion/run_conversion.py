@@ -299,7 +299,7 @@ def save_annotations(
     slide_ann_dir.mkdir(exist_ok=True)
 
     try:
-        ann_path = f'{slide_ann_dir}/{slide_id}_ann_step_{ann_step}.dcm'
+        ann_path = f'{slide_ann_dir}/{slide_id}_ann_step_{ann_step+1}.dcm'
         logging.info(f'Writing annotation to {str(ann_path)}.')
         data['ann_dcm'].save_as(ann_path)
 
@@ -355,19 +355,25 @@ def run(
         slide_cells = filter_cell_annotations(csv_cells, slide_id)
         if len(slide_cells) > 0: 
             # Loop over all the different steps / consensus 
-            max_ann_step = 6 # get maximal length  
-            ann_steps = range(max_ann_step).append('consensus')
+            slide_cells['ann_steps'] = slide_cells['all_annotations'].apply(lambda x: len(x.split(',')))
+            ann_steps = list(range(slide_cells['ann_steps'].max()))
             for ann_step in ann_steps: 
+                slide_cells_ann_step = slide_cells[slide_cells['ann_steps'] > ann_step] 
                 data = get_source_image_metadata(source_image_root_dir/slide_id)
-                data = parse_annotations(data, slide_cells, ann_step)
+                data = parse_annotations(data, slide_cells_ann_step, ann_step)
                 data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
-                data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir) # add suffix indicating step of anntation process 
+                data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)  
                 save_annotations(data, output_dir, ann_step)
 
+            # Also encode the final consensus 
+            data = get_source_image_metadata(source_image_root_dir/slide_id)
+            data = parse_annotations(data, slide_cells, ann_step='consensus')
+            data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
+            data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)
+            save_annotations(data, output_dir, ann_step='consensus')
 
 if __name__ == "__main__":
     data_dir = Path('/home/dschacherer/bmdeep_conversion/data/bmdeep_DICOM_converted')
-    slide_id = 'F7177163C833DFF4B38FC8D2872F1EC6_1_bm'
     cell_csv = Path('/home/dschacherer/bmdeep_conversion/data/cells.csv')
     roi_csv = Path('/home/dschacherer/bmdeep_conversion/data/rois.csv')
     run(cell_csv, roi_csv, data_dir, data_dir)
