@@ -182,9 +182,9 @@ def create_bulk_annotations_for_rois(
     group = hd.ann.AnnotationGroup(
         number=1,
         uid=hd.UID(),
-        label='tbd', # TODO 
-        annotated_property_category=metadata_config.labels_dict['finding_category'][0], # TODO
-        annotated_property_type=metadata_config.labels_dict['finding_category'][0], # TODO
+        label='monolayer', 
+        annotated_property_category=metadata_config.roi_labels['monolayer'][0], 
+        annotated_property_type=metadata_config.roi_labels['monolayer'][1], 
         graphic_type=graphic_type,
         graphic_data=graphic_data,
         algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.MANUAL,
@@ -210,7 +210,6 @@ def create_bulk_annotations_for_rois(
         software_versions=metadata_config.software_versions,
         device_serial_number=metadata_config.device_serial_number,
     )
-    annotations.add(metadata_config.other_trials_seq_element)
 
     return annotations
 
@@ -268,15 +267,15 @@ def create_bulk_annotations_for_cells(
 
     groups = []
     group_number = 1
-    for label_idx, label in enumerate(sorted(metadata_config.labels_dict['label'])): 
+    for label in sorted(metadata_config.cell_labels): 
         indices = np.where(np.array(labels) == label)[0].tolist()
         if len(indices) > 0: 
             group = hd.ann.AnnotationGroup(
                 number=group_number,
                 uid=hd.UID(),
                 label=label,
-                annotated_property_category=metadata_config.labels_dict['finding_category'][label_idx],
-                annotated_property_type=metadata_config.labels_dict['finding_type'][label_idx],
+                annotated_property_category=metadata_config.cell_labels[label][0],
+                annotated_property_type=metadata_config.cell_labels[label][1],
                 graphic_type=graphic_type,
                 graphic_data=[graphic_data[i] for i in indices],
                 algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.MANUAL,
@@ -309,6 +308,5 @@ def create_bulk_annotations_for_cells(
         software_versions=metadata_config.software_versions,
         device_serial_number=metadata_config.device_serial_number,
     )
-    annotations.add(metadata_config.other_trials_seq_element)
 
     return annotations
