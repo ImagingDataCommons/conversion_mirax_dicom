@@ -135,8 +135,12 @@ def create_bulk_annotations_for_rois(
     source_image_metadata: Dataset,
     graphic_data: list[np.ndarray],
     identifiers: list[int],
+    series_uid: hd.UID, 
+    sop_instance_number: int,
     graphic_type: str = 'POLYGON',
-    annotation_coordinate_type: str = 'SCOORD'
+    annotation_coordinate_type: str = 'SCOORD', 
+ 
+
     ) -> hd.ann.MicroscopyBulkSimpleAnnotations:
     """
     Create DICOM Microscopy Bulk Simple Annotation objects. 
@@ -150,6 +154,10 @@ def create_bulk_annotations_for_rois(
         coordinate type.
     identifiers: list[int]
         Identifier for each ROI annotation taken as is from input. 
+    series_uid: hd.UID
+        DICOM SeriesInstanceUID. All annotation steps, plus consensus and ROIs go into the same Series. 
+    sop_instance_number: 
+        Number of the SOPInstance within the DICOM Series. 
     graphic_type: str, optional 
         Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
         or 'POINT'.
@@ -157,7 +165,8 @@ def create_bulk_annotations_for_rois(
         Store coordinates in the Bulk Microscopy Bulk Simple Annotations in the
         (3D) frame of reference (SCOORD3D), or the (2D) total pixel matrix
         (SCOORD, default).
-
+    
+        
     Returns
     -------
     annotation: hd.ann.MicroscopyBulkSimpleAnnotations:
@@ -192,10 +201,10 @@ def create_bulk_annotations_for_rois(
         source_images=[source_image_metadata],
         annotation_coordinate_type=annotation_coordinate_type,
         annotation_groups=[group],
-        series_instance_uid=hd.UID(),
-        series_number=204, # TODO 
+        series_instance_uid=series_uid,  
+        series_number=33, # no deeper meaning, just higher number in case other series with images might be added   
         sop_instance_uid=hd.UID(),
-        instance_number=1, # TODO
+        instance_number=sop_instance_number, 
         manufacturer=metadata_config.manufacturer,
         manufacturer_model_name=metadata_config.manufacturer_model_name,
         software_versions=metadata_config.software_versions,
@@ -212,6 +221,8 @@ def create_bulk_annotations_for_cells(
     cell_identifiers: list[int],
     roi_identifiers: list[int], 
     labels: list[str],
+    series_uid: hd.UID, 
+    sop_instance_number: int,
     graphic_type: str = 'POLYGON',
     annotation_coordinate_type: str = 'SCOORD'
     ) -> hd.ann.MicroscopyBulkSimpleAnnotations:
@@ -231,6 +242,10 @@ def create_bulk_annotations_for_cells(
         Identifier for each cell annotation indicating which ROI they are part of. 
     labels: list[str]
         Label for each annotation taken as is from input. 
+    series_uid: hd.UID
+        DICOM SeriesInstanceUID. All annotation steps, plus consensus and ROIs go into the same Series. 
+    sop_instance_number: 
+        Number of the SOPInstance within the DICOM Series. 
     graphic_type: str, optional 
         Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
         or 'POINT'.
@@ -285,10 +300,10 @@ def create_bulk_annotations_for_cells(
         source_images=[source_image_metadata],
         annotation_coordinate_type=annotation_coordinate_type,
         annotation_groups=groups,
-        series_instance_uid=hd.UID(),
-        series_number=204, # TODO
+        series_instance_uid=series_uid, 
+        series_number=33, # no deeper meaning, just higher number in case other series with images might be added
         sop_instance_uid=hd.UID(),
-        instance_number=1, # TODO
+        instance_number=sop_instance_number, 
         manufacturer=metadata_config.manufacturer,
         manufacturer_model_name=metadata_config.manufacturer_model_name,
         software_versions=metadata_config.software_versions,

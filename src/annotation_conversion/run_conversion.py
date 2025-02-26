@@ -5,6 +5,7 @@ import pydicom
 import logging
 import argparse
 import pandas as pd
+import highdicom as hd
 from pathlib import Path
 from time import time
 from typing import Any, Dict, Union  
@@ -235,6 +236,8 @@ def parse_annotations_to_graphic_data(
 
 def create_dcm_annotations(
     data: Dict[str, Any],
+    series_uid: hd.UID, 
+    sop_instance_number: int,
     graphic_type: str,
     annotation_coordinate_type: str,
     output_dir: Path, 
@@ -268,6 +271,10 @@ def create_dcm_annotations(
             bounding box is contained in, i.e. in which ROI the cell annotation can be found. 
         - labels: list[str]
             Label for each bounding box. 
+    series_uid: hd.UID
+        DICOM SeriesInstanceUID. All annotation steps, plus consensus and ROIs go into the same Series. 
+    sop_instance_number: 
+        Number of the SOPInstance within the DICOM Series.
     graphic_type: str
         Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
         or 'POINT'.
@@ -301,6 +308,8 @@ def create_dcm_annotations(
                 source_image_metadata=data['source_image'],
                 graphic_data=data['graphic_data'],
                 identifiers=data['identifiers'],
+                series_uid=series_uid,
+                sop_instance_number=sop_instance_number, 
                 graphic_type=graphic_type,
                 annotation_coordinate_type=annotation_coordinate_type
             )
@@ -311,6 +320,8 @@ def create_dcm_annotations(
                 cell_identifiers=data['cell_identifiers'],
                 roi_identifiers=data['roi_identifiers'],
                 labels=data['labels'],
+                series_uid=series_uid, 
+                sop_instance_number=sop_instance_number,
                 graphic_type=graphic_type,
                 annotation_coordinate_type=annotation_coordinate_type
             )
@@ -431,6 +442,7 @@ def run(
     cells, rois = preprocess_annotation_csvs(csv_cells, csv_rois)
 
     for slide_id in os.listdir(source_image_root_dir):
+        ann_series_uid = hd.UID() # create unique identifier for the DICOM Series holding all annotation objects created here 
         image_data = get_source_image_metadata(source_image_root_dir/slide_id)
 
         # Create DICOM objects for ROI annotations 
@@ -438,7 +450,12 @@ def run(
         if len(slide_rois) > 0: 
             data = parse_roi_annotations(image_data, slide_rois)
             data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
-            data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)  
+            data = create_dcm_annotations(data=data, 
+                                          series_uid=ann_series_uid, 
+                                          sop_instance_number=1, 
+                                          graphic_type=graphic_type, 
+                                          annotation_coordinate_type=annotation_coordinate_type, 
+                                          output_dir=output_dir)  
             save_annotations(data, output_dir)
 
         # Create DICOM objects for cell annotations
@@ -451,13 +468,23 @@ def run(
                 slide_cells_this_ann_step = slide_cells[slide_cells['ann_steps'] > ann_step] 
                 data = parse_cell_annotations(image_data, slide_cells_this_ann_step, ann_step)
                 data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
-                data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)  
+                data = create_dcm_annotations(data=data, 
+                                              series_uid=ann_series_uid, 
+                                              sop_instance_number=ann_step+1, 
+                                              graphic_type=graphic_type, 
+                                              annotation_coordinate_type=annotation_coordinate_type, 
+                                              output_dir=output_dir)  
                 save_annotations(data, output_dir, ann_step)
 
             # Also encode the final consensus 
             data = parse_cell_annotations(image_data, slide_cells, ann_step='consensus')
             data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
-            data = create_dcm_annotations(data, graphic_type, annotation_coordinate_type, output_dir)
+            data = create_dcm_annotations(data=data, 
+                                          series_uid=ann_series_uid, 
+                                          sop_instance_number=ann_steps[-1]+1, 
+                                          graphic_type=graphic_type, 
+                                          annotation_coordinate_type=annotation_coordinate_type, 
+                                          output_dir=output_dir)
             save_annotations(data, output_dir, ann_step='consensus')
 
 
