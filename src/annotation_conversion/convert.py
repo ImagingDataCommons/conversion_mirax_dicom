@@ -178,8 +178,7 @@ def create_bulk_annotations_for_rois(
         annotated_property_type=metadata_config.labels_dict['finding_category'][0], # TODO
         graphic_type=graphic_type,
         graphic_data=graphic_data,
-        algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.AUTOMATIC,
-        algorithm_identification=metadata_config.algorithm_identification,
+        algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.MANUAL,
         measurements=[
             hd.ann.Measurements(
                 name=codes.SCT.Area,
@@ -196,7 +195,7 @@ def create_bulk_annotations_for_rois(
         series_instance_uid=hd.UID(),
         series_number=204, # TODO 
         sop_instance_uid=hd.UID(),
-        instance_number=1,
+        instance_number=1, # TODO
         manufacturer=metadata_config.manufacturer,
         manufacturer_model_name=metadata_config.manufacturer_model_name,
         software_versions=metadata_config.software_versions,
@@ -265,8 +264,7 @@ def create_bulk_annotations_for_cells(
                 annotated_property_type=metadata_config.labels_dict['finding_type'][label_idx],
                 graphic_type=graphic_type,
                 graphic_data=[graphic_data[i] for i in indices],
-                algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.AUTOMATIC,
-                algorithm_identification=metadata_config.algorithm_identification,
+                algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.MANUAL,
                 measurements=[
                     hd.ann.Measurements(
                         name=codes.SCT.Area,
@@ -290,7 +288,7 @@ def create_bulk_annotations_for_cells(
         series_instance_uid=hd.UID(),
         series_number=204, # TODO
         sop_instance_uid=hd.UID(),
-        instance_number=1,
+        instance_number=1, # TODO
         manufacturer=metadata_config.manufacturer,
         manufacturer_model_name=metadata_config.manufacturer_model_name,
         software_versions=metadata_config.software_versions,
