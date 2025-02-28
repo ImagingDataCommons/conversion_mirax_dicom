@@ -120,9 +120,9 @@ def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_
         x_min, y_min = row['x_in_slide'], row['y_in_slide']
         x_max, y_max = x_min + row['cell_width'], y_min + row['cell_height']
         if ann_step == 'consensus': 
-            cell_label = row['consensus_label']
+            cell_label = row['original_consensus_label']
         else: 
-            cell_label = row['all_annotations'].split(',')[ann_step]
+            cell_label = row['all_original_annotations'].split(',')[ann_step]
         ann.append(CellAnnotation(
             cell_identifier=row['cell_id'], 
             roi_identifier=row['rocellboxing_id'],
@@ -325,6 +325,7 @@ def create_dcm_annotations(
                 graphic_type=graphic_type,
                 annotation_coordinate_type=annotation_coordinate_type
             )
+            print(ann_dcm, 'kdljflksjöldafj')
     except Exception as e:
         logging.error(f"Error {str(e)}")
         errors.append(
@@ -462,7 +463,7 @@ def run(
         slide_cells = filter_slide_annotations(cells, slide_id)
         if len(slide_cells) > 0: 
             # Loop over all the different steps / consensus 
-            slide_cells['ann_steps'] = slide_cells['all_annotations'].apply(lambda x: len(x.split(',')))
+            slide_cells['ann_steps'] = slide_cells['all_original_annotations'].apply(lambda x: len(x.split(',')))
             ann_steps = list(range(slide_cells['ann_steps'].max()))
             for ann_step in ann_steps: 
                 slide_cells_this_ann_step = slide_cells[slide_cells['ann_steps'] > ann_step] 

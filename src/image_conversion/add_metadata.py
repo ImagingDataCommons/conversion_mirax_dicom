@@ -128,10 +128,15 @@ def build_additional_metadata(patient_age: str,
     ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0104], 'LO', primary_diagnoses_code_meaning) # CodeMeaning        
 
     ds.add_new([0x0012, 0x0023], 'SQ', [pydicom.Dataset()]) # add OtherClinicalTrialProtocolIDSequence
-    ds.OtherClinicalTrialProtocolIDSequence[0].add_new([0x0012, 0x0020], 'LO', other_clinical_trial_protocol_id)
-    ds.OtherClinicalTrialProtocolIDSequence[0].add_new([0x0012, 0x0022], 'LO', other_clinical_trial_protocol_id_issuer)
+    ds.OtherClinicalTrialProtocolIDsSequence[0].add_new([0x0012, 0x0020], 'LO', other_clinical_trial_protocol_id)
+    ds.OtherClinicalTrialProtocolIDsSequence[0].add_new([0x0012, 0x0022], 'LO', other_clinical_trial_protocol_id_issuer)
 
     ds.add_new([0x0040, 0x0555], 'SQ', [pydicom.Dataset()]) # add AcquisitionContextSequence
+    ds.AcquisitionContextSequence[0].add_new([0x0040, 0xA040], 'CS', 'TEXT')
+    ds.AcquisitionContextSequence[0].add_new([0x0040, 0xA043], 'SQ', [pydicom.Dataset()]) # add ConceptNameCodeSequence
+    ds.AcquisitionContextSequence[0].ConceptNameCodeSequence[0].add_new([0x0008, 0x0100], 'SH', '121106') # CodeValue
+    ds.AcquisitionContextSequence[0].ConceptNameCodeSequence[0].add_new([0x0008, 0x0100], 'SH', 'DCM') # CodingSchemeDesignator
+    ds.AcquisitionContextSequence[0].ConceptNameCodeSequence[0].add_new([0x0008, 0x0100], 'LO', 'Comment') # CodeMeaning
     ds.AcquisitionContextSequence[0].add_new([0x0040, 0xA160], 'UT', json.dumps(original_mirax_properties))
 
     return ds 
