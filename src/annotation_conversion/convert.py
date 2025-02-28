@@ -196,13 +196,13 @@ def create_bulk_annotations_for_rois(
         algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.MANUAL,
         measurements=[
             hd.ann.Measurements(
-                name=codes.SCT.Area,
-                unit=codes.UCUM.ArbitraryUnit,
+                name=codes.DCM.ReferencedRegionOfInterestIdentifier,
+                unit=codes.UCUM.NoUnits,
                 values=np.array(identifiers),
             )
         ],
     )
-    
+
     annotations = hd.ann.MicroscopyBulkSimpleAnnotations(
         source_images=[source_image_metadata],
         annotation_coordinate_type=annotation_coordinate_type,
@@ -287,20 +287,20 @@ def create_bulk_annotations_for_cells(
                 algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.MANUAL,
                 measurements=[
                     hd.ann.Measurements(
-                        name=codes.SCT.Area,
-                        unit=codes.UCUM.ArbitraryUnit,
+                        name=codes.DCM.Identifier,
+                        unit=codes.UCUM.NoUnits,
                         values=np.array([cell_identifiers[i] for i in indices]),
                     ), 
                     hd.ann.Measurements(
-                        name=codes.DCM.Identifier,
-                        unit=codes.UCUM.ArbitraryUnit,
+                        name=codes.DCM.ReferencedRegionOfInterestIdentifier,
+                        unit=codes.UCUM.NoUnits,
                         values=np.array([roi_identifiers[i] for i in indices]),
                     )
                 ],
             )
             groups.append(group)
             group_number += 1
-
+    print('lk', codes.SCT.dir('basophilic'))
     annotations = hd.ann.MicroscopyBulkSimpleAnnotations(
         source_images=[source_image_metadata],
         annotation_coordinate_type=annotation_coordinate_type,
@@ -314,5 +314,4 @@ def create_bulk_annotations_for_cells(
         software_versions=metadata_config.software_versions,
         device_serial_number=metadata_config.device_serial_number,
     )
-    print(codes.UCUM.dir('arbitrary'))
     return annotations
