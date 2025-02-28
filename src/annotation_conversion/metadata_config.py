@@ -1,4 +1,3 @@
-import pydicom
 from pydicom.sr.coding import Code
 from git_utils import get_git_remote_url, get_git_commit_hash
 
