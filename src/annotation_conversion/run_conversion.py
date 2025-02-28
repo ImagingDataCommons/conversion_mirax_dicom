@@ -156,7 +156,7 @@ def parse_annotations_to_graphic_data(
         - ann: Union[list[CellAnnotations], list[ROIAnnotations]]
             List of cell annotations or ROI annotations. 
     graphic_type: hd.ann.GraphicTypeValues
-        Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
+        Graphic type to use to store all nuclei. Allowed options are 'RECTANGLE' (default)
         or 'POINT' (will be bounding box centroid). 
     annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues
         Store coordinates in the Bulk Microscopy Bulk Simple Annotations in
@@ -276,7 +276,7 @@ def create_dcm_annotations(
     sop_instance_number: 
         Number of the SOPInstance within the DICOM Series.
     graphic_type: str
-        Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
+        Graphic type to use to store all nuclei. Allowed options are 'RECTANGLE' (default)
         or 'POINT'.
     annotation_coordinate_type: str
         Store coordinates in the Bulk Microscopy Bulk Simple Annotations in
@@ -325,7 +325,6 @@ def create_dcm_annotations(
                 graphic_type=graphic_type,
                 annotation_coordinate_type=annotation_coordinate_type
             )
-            print(ann_dcm, 'kdljflksjöldafj')
     except Exception as e:
         logging.error(f"Error {str(e)}")
         errors.append(
@@ -427,7 +426,7 @@ def run(
     csv_rois: Path, 
     source_image_root_dir: Path,
     output_dir: Path,
-    graphic_type: str = 'POLYGON',
+    graphic_type: str = 'RECTANGLE',
     annotation_coordinate_type: str = 'SCOORD',
 ) -> None: 
     

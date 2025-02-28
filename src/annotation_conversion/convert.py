@@ -33,7 +33,7 @@ def process_annotation(
         Transformer object to map image coordinates to reference coordinates
         for the image.
     graphic_type: hd.ann.GraphicTypeValues, optional 
-        Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
+        Graphic type to use to store all nuclei. Allowed options are 'RECTANGLE' (default)
         or 'POINT'. 
     annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues, optional
         Store coordinates in the Bulk Microscopy Bulk Simple Annotations in the
@@ -46,17 +46,23 @@ def process_annotation(
         Numpy array of float32 coordinates to include in the Bulk Microscopy
         Simple Annotations.
     """      
-    bounding_box = box(*ann.bounding_box)
+    xmin, ymin, xmax, ymax = ann.bounding_box
 
-    # Remove the final point (require not to be closed but Polygon adds this)
-    coords = np.array(bounding_box.exterior.coords)[:-1, :]
-
-    # Simplify the coordinates as required
-    if graphic_type == hd.ann.GraphicTypeValues.POLYGON:
-        graphic_data = coords
+    if graphic_type == hd.ann.GraphicTypeValues.RECTANGLE:
+        graphic_data = np.array(
+            [
+                [xmin, ymin],
+                [xmax, ymin],
+                [xmax, ymax],
+                [xmin, ymax],
+            ]
+        )
     elif graphic_type == hd.ann.GraphicTypeValues.POINT:
-        x, y = bounding_box.centroid.xy
-        graphic_data = np.array([[x[0], y[0]]])
+        graphic_data = np.array(
+            [
+                [xmin + (xmax-xmin)//2, ymin + (ymax-ymin)//2]
+            ]
+        )
     else:
         raise ValueError(
             f'Graphic type "{graphic_type.value}" not supported.'
@@ -75,7 +81,7 @@ def process_annotation(
 def get_graphic_data(
     annotations: List[CellAnnotation],
     source_image_metadata: Dataset,
-    graphic_type: str = 'POLYGON',
+    graphic_type: str = 'RECTANGLE',
     annotation_coordinate_type: str = 'SCOORD'
     ) -> List[np.ndarray]:
     """
@@ -90,7 +96,7 @@ def get_graphic_data(
         converted to DICOM format). This can be the full image datasets, but the
         PixelData attributes are not required.
     graphic_type: str, optional 
-        Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
+        Graphic type to use to store all nuclei. Allowed options are 'RECTANGLE' (default)
         or 'POINT'.
     annotation_coordinate_type: str, optional
         Store coordinates in the Bulk Microscopy Bulk Simple Annotations in the
@@ -137,7 +143,7 @@ def create_bulk_annotations_for_rois(
     identifiers: list[int],
     series_uid: hd.UID, 
     sop_instance_number: int,
-    graphic_type: str = 'POLYGON',
+    graphic_type: str = 'RECTANGLE',
     annotation_coordinate_type: str = 'SCOORD', 
  
 
@@ -159,7 +165,7 @@ def create_bulk_annotations_for_rois(
     sop_instance_number: 
         Number of the SOPInstance within the DICOM Series. 
     graphic_type: str, optional 
-        Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
+        Graphic type to use to store all nuclei. Allowed options are 'RECTANGLE' (default)
         or 'POINT'.
     annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues, optional
         Store coordinates in the Bulk Microscopy Bulk Simple Annotations in the
@@ -191,7 +197,7 @@ def create_bulk_annotations_for_rois(
         measurements=[
             hd.ann.Measurements(
                 name=codes.SCT.Area,
-                unit=codes.UCUM.SquareMicrometer,
+                unit=codes.UCUM.ArbitraryUnit,
                 values=np.array(identifiers),
             )
         ],
@@ -222,7 +228,7 @@ def create_bulk_annotations_for_cells(
     labels: list[str],
     series_uid: hd.UID, 
     sop_instance_number: int,
-    graphic_type: str = 'POLYGON',
+    graphic_type: str = 'RECTANGLE',
     annotation_coordinate_type: str = 'SCOORD'
     ) -> hd.ann.MicroscopyBulkSimpleAnnotations:
     """
@@ -246,7 +252,7 @@ def create_bulk_annotations_for_cells(
     sop_instance_number: 
         Number of the SOPInstance within the DICOM Series. 
     graphic_type: str, optional 
-        Graphic type to use to store all nuclei. Allowed options are 'POLYGON' (default)
+        Graphic type to use to store all nuclei. Allowed options are 'RECTANGLE' (default)
         or 'POINT'.
     annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues, optional
         Store coordinates in the Bulk Microscopy Bulk Simple Annotations in the
@@ -282,12 +288,12 @@ def create_bulk_annotations_for_cells(
                 measurements=[
                     hd.ann.Measurements(
                         name=codes.SCT.Area,
-                        unit=codes.UCUM.SquareMicrometer,
+                        unit=codes.UCUM.ArbitraryUnit,
                         values=np.array([cell_identifiers[i] for i in indices]),
                     ), 
                     hd.ann.Measurements(
-                        name=codes.SCT.Area,
-                        unit=codes.UCUM.SquareMicrometer,
+                        name=codes.DCM.Identifier,
+                        unit=codes.UCUM.ArbitraryUnit,
                         values=np.array([roi_identifiers[i] for i in indices]),
                     )
                 ],
@@ -308,5 +314,5 @@ def create_bulk_annotations_for_cells(
         software_versions=metadata_config.software_versions,
         device_serial_number=metadata_config.device_serial_number,
     )
-
+    print(codes.UCUM.dir('arbitrary'))
     return annotations

@@ -14,7 +14,7 @@ class CellAnnotation:
 @dataclass
 class ROIAnnotation: 
     identifier: int
-    bounding_box: tuple 
+    bounding_box: tuple # xmin, ymin, xmax, ymax
 
 
 def preprocess_annotation_csvs(cells_csv: Path, roi_csv: Path) -> pd.DataFrame: 
