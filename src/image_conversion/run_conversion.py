@@ -88,9 +88,12 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
             primary_diagnoses_code_meaning=nci_thesaurus[clinical_metadata.loc[patient_id]['ncit_concept_code']],  
             admitting_diagnoses_description=','.join([clinical_metadata.loc[patient_id]['leukemia_type'], clinical_metadata.loc[patient_id]['leukemia_subtype']]),  
             clinical_trial_coord_center='University Hospital Erlangen', 
-            clinical_trial_protocol_name='BMDeep', 
+            clinical_trial_protocol_name='BoneMarrowWSI-PediatricLeukemia', 
             clinical_trial_sponsor='Uni Hospital Erlangen, Fraunhofer MEVIS, Uni Erlangen-Nuremberg', 
-            original_mirax_properties='tbd'#mrxs_properties
+            other_clinical_trial_protocol_id='doi:10.5281/zenodo.14933087',
+            other_clinical_trial_protocol_id_issuer='DOI',
+            original_mirax_properties=mrxs_properties
+            # TODO: doi
         )
 
         converted_dicom_dir = local_output.joinpath(local_mrxs_file.stem)

@@ -211,6 +211,7 @@ def create_bulk_annotations_for_rois(
         device_serial_number=metadata_config.device_serial_number,
     )
 
+    annotations.add(metadata_config.other_clinical_trial_ids_seq)
     return annotations
 
 
@@ -309,4 +310,5 @@ def create_bulk_annotations_for_cells(
         device_serial_number=metadata_config.device_serial_number,
     )
 
+    annotations.add(metadata_config.other_clinical_trial_ids_seq)
     return annotations

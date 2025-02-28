@@ -70,14 +70,15 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
  
     specimen = Specimen(
         identifier=patient_id,
-        extraction_step=Collection(method=SpecimenCollectionProcedureCode("Aspiration")), # P1-03130
-        type=AnatomicPathologySpecimenTypesCode("Aspirate"), # G-8003
-        container=ContainerTypeCode("Specimen vial") # A-01024 
+        extraction_step=Collection(method=SpecimenCollectionProcedureCode('Aspiration')), # 14766002, SCT
+        type=AnatomicPathologySpecimenTypesCode('Aspirate'), # 119295008, SCT
+        container=ContainerTypeCode('Specimen vial') # 434746001, SCT 
     )
  
     slide_sample = SlideSample(
         identifier=patient_id,
-        sampled_from=specimen.sample(method=SpecimenSamplingProcedureCode("Smear procedure")), # P1-0329D
+        anatomical_sites=[pydicom.sr.coding.Code('14016003', 'SCT', 'Bone marrow')], # 14016003, SCT
+        sampled_from=specimen.sample(method=SpecimenSamplingProcedureCode('Smear procedure')), # 448895004, SCT
     )
 
     slide = Slide(
@@ -85,7 +86,7 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
         stainings=[
             Staining(
                 substances=[
-                    SpecimenStainsCode("may-Grunwald giemsa stain"), # C-2281A
+                    SpecimenStainsCode('may-Grunwald giemsa stain'), # 255803006, SCT
                 ]
             )
         ],
@@ -109,6 +110,8 @@ def build_additional_metadata(patient_age: str,
                            clinical_trial_coord_center: str, 
                            clinical_trial_protocol_name: str, 
                            clinical_trial_sponsor: str, 
+                           other_clinical_trial_protocol_id: str, 
+                           other_clinical_trial_protocol_id_issuer: str,
                            original_mirax_properties: dict) -> pydicom.Dataset: 
     
     ds = pydicom.Dataset()
@@ -118,12 +121,17 @@ def build_additional_metadata(patient_age: str,
     ds.add_new([0x0012, 0x0060], 'LO', clinical_trial_coord_center) 
     ds.add_new([0x0012, 0x0021], 'LO', clinical_trial_protocol_name)
     ds.add_new([0x0012, 0x0010], 'LO', clinical_trial_sponsor)
-    ds.add_new([0x0020, 0x4000], 'LT', json.dumps(original_mirax_properties))
 
     ds.add_new([0x0008, 0x1084], 'SQ', [pydicom.Dataset()]) # add AdmittingDiagnosesCodeSequence
     ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0100], 'SH', primary_diagnoses_code) # CodeValue
     ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0102], 'SH', 'NCIt') # CodingSchemeDesignator
     ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0104], 'LO', primary_diagnoses_code_meaning) # CodeMeaning        
 
+    ds.add_new([0x0012, 0x0023], 'SQ', [pydicom.Dataset()]) # add OtherClinicalTrialProtocolIDSequence
+    ds.OtherClinicalTrialProtocolIDSequence[0].add_new([0x0012, 0x0020], 'LO', other_clinical_trial_protocol_id)
+    ds.OtherClinicalTrialProtocolIDSequence[0].add_new([0x0012, 0x0022], 'LO', other_clinical_trial_protocol_id_issuer)
+
+    ds.add_new([0x0040, 0x0555], 'SQ', [pydicom.Dataset()]) # add AcquisitionContextSequence
+    ds.AcquisitionContextSequence[0].add_new([0x0040, 0xA160], 'UT', json.dumps(original_mirax_properties))
 
     return ds 

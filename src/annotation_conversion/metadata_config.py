@@ -1,3 +1,4 @@
+import pydicom
 from pydicom.sr.coding import Code
 from git_utils import get_git_remote_url, get_git_commit_hash
 
@@ -65,3 +66,7 @@ cell_labels = {
     'unknown_blast': []
 }
 
+# IssuerOfClinicalTrialProtocolID and OtherClinicalTrialProtocolIDsSequence need to be set manually. 
+other_clinical_trial_ids_seq = pydicom.Dataset()
+other_clinical_trial_ids_seq[0].add_new([0x0012, 0x0020], 'LO', 'DOI') # IssuerOfClinicalTrialProtocolID
+other_clinical_trial_ids_seq[0].add_new([0x0012, 0x0022], 'LO', 'doi:10.5281/zenodo.14933087') # OtherClinicalTrialProtocolIDsSequence
