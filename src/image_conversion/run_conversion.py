@@ -54,11 +54,6 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
     # Read clinical metadata and NCI Thesaurus
     clinical_metadata = pd.read_csv(metadata, delimiter=';')
     clinical_metadata.set_index('patient_id', inplace=True)
-    for i, row in clinical_metadata.iterrows(): 
-        print(row['leukemia_subtype'])
-        if type(row['leukemia_subtype']) == float: 
-            print(row['leukemia_subtype'], str(row['leukemia_subtype']))
-        
     nci_thesaurus = read_nci_thesaurus(Path(__file__).with_name('NCIt_Neoplasm_Core_Terminology.csv'))
 
     # Conversion loop

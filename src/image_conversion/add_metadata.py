@@ -128,7 +128,7 @@ def build_additional_metadata(
     ds.add_new([0x0012, 0x0010], 'LO', clinical_trial_sponsor)
 
     if (isinstance(admitting_diagnoses_description[0], str) and isinstance(admitting_diagnoses_description[1], str)): # if not float, i.e., nan 
-        admitting_diagnoses = ','.join(admitting_diagnoses_description[0], admitting_diagnoses_description[1])
+        admitting_diagnoses = ','.join([admitting_diagnoses_description[0], admitting_diagnoses_description[1]])
         ds.add_new([0x0008, 0x1080], 'LO', admitting_diagnoses)
 
 
