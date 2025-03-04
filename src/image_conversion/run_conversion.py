@@ -93,7 +93,6 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
             other_clinical_trial_protocol_id='doi:10.5281/zenodo.14933087',
             other_clinical_trial_protocol_id_issuer='DOI',
             original_mirax_properties=mrxs_properties
-            # TODO: doi
         )
 
         converted_dicom_dir = local_output.joinpath(local_mrxs_file.stem)
