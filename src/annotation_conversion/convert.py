@@ -193,7 +193,7 @@ def create_bulk_annotations_for_rois(
         annotated_property_type=metadata_config.roi_labels['monolayer'][1], 
         graphic_type=graphic_type,
         graphic_data=graphic_data,
-        algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.MANUAL,
+        algorithm_type=metadata_config.algorithm_type,
         measurements=[
             hd.ann.Measurements(
                 name=codes.DCM.ReferencedRegionOfInterestIdentifier,
@@ -285,7 +285,7 @@ def create_bulk_annotations_for_cells(
                 annotated_property_type=metadata_config.cell_labels[label][1],
                 graphic_type=graphic_type,
                 graphic_data=[graphic_data[i] for i in indices],
-                algorithm_type=hd.ann.AnnotationGroupGenerationTypeValues.MANUAL,
+                algorithm_type=metadata_config.algorithm_type,
                 measurements=[
                     hd.ann.Measurements(
                         name=codes.DCM.Identifier,
