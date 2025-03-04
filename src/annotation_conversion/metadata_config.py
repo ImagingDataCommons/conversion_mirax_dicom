@@ -3,6 +3,8 @@ from git_utils import get_git_remote_url, get_git_commit_hash
 
 
 # Basic Metadata
+series_description_roi_anns = 'Regions of interest for cell classification'
+series_description_cell_anns = 'Cell annotations with cell labels'
 manufacturer = 'University Hospital Erlangen and Fraunhofer MEVIS'
 manufacturer_model_name = 'BMDeep data conversion'
 software_versions = get_git_remote_url(simplify=True)

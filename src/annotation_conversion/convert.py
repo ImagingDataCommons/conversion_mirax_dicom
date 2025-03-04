@@ -204,6 +204,7 @@ def create_bulk_annotations_for_rois(
     )
 
     annotations = hd.ann.MicroscopyBulkSimpleAnnotations(
+        series_description=metadata_config.series_description_roi_anns,
         source_images=[source_image_metadata],
         annotation_coordinate_type=annotation_coordinate_type,
         annotation_groups=[group],
@@ -300,8 +301,9 @@ def create_bulk_annotations_for_cells(
             )
             groups.append(group)
             group_number += 1
-    print('lk', codes.SCT.dir('basophilic'))
+
     annotations = hd.ann.MicroscopyBulkSimpleAnnotations(
+        series_description=metadata_config.series_description_cell_anns,
         source_images=[source_image_metadata],
         annotation_coordinate_type=annotation_coordinate_type,
         annotation_groups=groups,
