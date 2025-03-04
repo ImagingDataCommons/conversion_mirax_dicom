@@ -1,10 +1,11 @@
+import math
 import openslide
 import pydicom 
 import json
 import pandas as pd 
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Union
+from typing import Dict, Tuple, Union
 
 from wsidicom.conceptcode import (
     AnatomicPathologySpecimenTypesCode,
@@ -102,30 +103,40 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
     ) 
 
 
-def build_additional_metadata(patient_age: str, 
-                           aquisition_duration: float, 
-                           primary_diagnoses_code: str,
-                           primary_diagnoses_code_meaning: str,  
-                           admitting_diagnoses_description: str, 
-                           clinical_trial_coord_center: str, 
-                           clinical_trial_protocol_name: str, 
-                           clinical_trial_sponsor: str, 
-                           other_clinical_trial_protocol_id: str, 
-                           other_clinical_trial_protocol_id_issuer: str,
-                           original_mirax_properties: dict) -> pydicom.Dataset: 
+def build_additional_metadata(
+        study_description: str, 
+        image_series_description: str, 
+        patient_age: str,              
+        aquisition_duration: float, 
+        primary_diagnoses_code: Union[str, float],
+        primary_diagnoses_code_meaning: Union[str, float],  
+        admitting_diagnoses_description: Union[Tuple[str], Tuple[float]], 
+        clinical_trial_coord_center: str, 
+        clinical_trial_protocol_name: str, 
+        clinical_trial_sponsor: str, 
+        other_clinical_trial_protocol_id: str, 
+        other_clinical_trial_protocol_id_issuer: str,
+        original_mirax_properties: dict) -> pydicom.Dataset: 
     
     ds = pydicom.Dataset()
+    ds.SeriesDescription = image_series_description
+    ds.StudyDescription = study_description
     ds.PatientAge = patient_age 
     ds.add_new([0x0018, 0x9073], 'FD', aquisition_duration) 
-    ds.add_new([0x0008, 0x1080], 'LO', admitting_diagnoses_description)
     ds.add_new([0x0012, 0x0060], 'LO', clinical_trial_coord_center) 
     ds.add_new([0x0012, 0x0021], 'LO', clinical_trial_protocol_name)
     ds.add_new([0x0012, 0x0010], 'LO', clinical_trial_sponsor)
 
-    ds.add_new([0x0008, 0x1084], 'SQ', [pydicom.Dataset()]) # add AdmittingDiagnosesCodeSequence
-    ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0100], 'SH', primary_diagnoses_code) # CodeValue
-    ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0102], 'SH', 'NCIt') # CodingSchemeDesignator
-    ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0104], 'LO', primary_diagnoses_code_meaning) # CodeMeaning        
+    if (isinstance(admitting_diagnoses_description[0], str) and isinstance(admitting_diagnoses_description[1], str)): # if not float, i.e., nan 
+        admitting_diagnoses = ','.join(admitting_diagnoses_description[0], admitting_diagnoses_description[1])
+        ds.add_new([0x0008, 0x1080], 'LO', admitting_diagnoses)
+
+
+    if isinstance(primary_diagnoses_code, str): # if not float, i.e., nan 
+        ds.add_new([0x0008, 0x1084], 'SQ', [pydicom.Dataset()]) # add AdmittingDiagnosesCodeSequence
+        ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0100], 'SH', primary_diagnoses_code) # CodeValue
+        ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0102], 'SH', 'NCIt') # CodingSchemeDesignator
+        ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0104], 'LO', primary_diagnoses_code_meaning) # CodeMeaning        
 
     ds.add_new([0x0012, 0x0023], 'SQ', [pydicom.Dataset()]) # add OtherClinicalTrialProtocolIDSequence
     ds.OtherClinicalTrialProtocolIDsSequence[0].add_new([0x0012, 0x0020], 'LO', other_clinical_trial_protocol_id)

@@ -54,6 +54,11 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
     # Read clinical metadata and NCI Thesaurus
     clinical_metadata = pd.read_csv(metadata, delimiter=';')
     clinical_metadata.set_index('patient_id', inplace=True)
+    for i, row in clinical_metadata.iterrows(): 
+        print(row['leukemia_subtype'])
+        if type(row['leukemia_subtype']) == float: 
+            print(row['leukemia_subtype'], str(row['leukemia_subtype']))
+        
     nci_thesaurus = read_nci_thesaurus(Path(__file__).with_name('NCIt_Neoplasm_Core_Terminology.csv'))
 
     # Conversion loop
@@ -82,11 +87,13 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
         # See issue: https://github.com/imi-bigpicture/wsidicomizer/issues/124
         aquisition_duration = float(find_property_by_suffix(mrxs_properties, 'scanning_time_in_sec'))
         additional_metadata = build_additional_metadata(
+            study_description='Bone marrow aspirate smear, pediatric leukemia', 
+            image_series_description='Bone marrow aspirate smear, May-Gruenwald-Giemsa stain',
             patient_age=clinical_metadata.loc[patient_id]['age'], 
             aquisition_duration=aquisition_duration, 
             primary_diagnoses_code=clinical_metadata.loc[patient_id]['ncit_concept_code'],
             primary_diagnoses_code_meaning=nci_thesaurus[clinical_metadata.loc[patient_id]['ncit_concept_code']],  
-            admitting_diagnoses_description=','.join([clinical_metadata.loc[patient_id]['leukemia_type'], clinical_metadata.loc[patient_id]['leukemia_subtype']]),  
+            admitting_diagnoses_description=(clinical_metadata.loc[patient_id]['leukemia_type'], clinical_metadata.loc[patient_id]['leukemia_subtype']),  
             clinical_trial_coord_center='University Hospital Erlangen', 
             clinical_trial_protocol_name='BoneMarrowWSI-PediatricLeukemia', 
             clinical_trial_sponsor='Uni Hospital Erlangen, Fraunhofer MEVIS, Uni Erlangen-Nuremberg', 
