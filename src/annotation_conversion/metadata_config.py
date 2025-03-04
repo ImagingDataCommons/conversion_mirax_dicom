@@ -9,13 +9,14 @@ software_versions = get_git_remote_url(simplify=True)
 device_serial_number = get_git_commit_hash()
 
 # Labels 
-roi_labels = {
-    'monolayer': [Code('309825002', 'SCT', 'Spatial and relational concepts'), Code('111099', 'DCM', 'Selected region')],
-}
-
 code_physical_object = Code('260787004', 'SCT', 'Physical object')
 code_anatomical_structure = Code('91723000', 'SCT', 'Anatomical structure')
 code_morphologic_abnormality = Code('49755003', 'SCT', 'Morphologically abnormal structure')
+code_spatial_relational_concept = Code('309825002', 'SCT', 'Spatial and relational concepts')
+
+roi_labels = {
+    'monolayer': [code_spatial_relational_concept, Code('111099', 'DCM', 'Selected region')],
+}
 
 cell_labels = {
     'artifact': [code_physical_object, Code('47973001', 'SCT', 'Artifact')], 
@@ -34,7 +35,7 @@ cell_labels = {
     'lymphoblast': [code_anatomical_structure, Code('15433008', 'SCT', 'Lymphoblast')],
     'lymphocyte': [code_anatomical_structure, Code('56972008', 'SCT', 'Lymphocyte')],
     'lymphocytic_blast': [code_anatomical_structure, Code('tbd', 'tbd', 'tbd')],
-    'lymphoidocyte': [code_anatomical_structure, Code('tbd', 'tbd', 'tbd')],
+    'lymphoidocyte': [code_anatomical_structure, Code('C12847', 'NCI', 'Reactive Lymphocyte')],
     'macrophage': [code_anatomical_structure, Code('58986001', 'SCT', 'Macrophage')],
     'megakaryocyte': [code_anatomical_structure, Code('23592000', 'SCT', 'Megakaryocyte')],
     'micromegakaryocyte': [code_anatomical_structure, Code('33196003', 'SCT', 'Micromegakaryocyte')],
@@ -49,7 +50,7 @@ cell_labels = {
     'neutrophilic_metamyelocyte': [code_anatomical_structure, Code('50134008', 'SCT', 'Neutrophilic metamyelocyte')],
     'neutrophilic_myelocyte': [code_anatomical_structure, Code('4717004', 'SCT', 'Neutrophilic myelocyte')],
     'orthochromatic_erythroblast': [code_anatomical_structure, Code('113334004', 'SCT', 'Orthochromic erythroblast')],
-    'phagocytosis': [Code('tbd', 'tbd', 'tbd'), Code('tbd', 'tbd', 'tbd')],
+    'phagocytosis': [Code('tbd', 'tbd', 'tbd'), Code('56639005', 'SCT', 'Phagocytosis')],
     'plasma_cell': [code_anatomical_structure, Code('113335003', 'SCT', 'Plasma cell')],
     'polychromatic_erythroblast': [code_anatomical_structure, Code('16779009', 'SCT', 'Polychromatophilic erythroblast')],
     'proerythroblast': [code_anatomical_structure, Code('16671004', 'SCT', 'Proerythroblast')],
@@ -63,8 +64,8 @@ cell_labels = {
     'segmented_neutrophil': [code_anatomical_structure, Code('80153006', 'SCT', 'Segmented neutrophil')],
     'smudge_cell': [code_morphologic_abnormality, Code('34717007', 'SCT', 'Smudge cell')],
     'spicule': [code_anatomical_structure, Code('C82998', 'NCI', 'Spicule')],
-    'technically_unfit': [Code('tbd', 'tbd', 'tbd'), Code('tbd', 'tbd', 'tbd')],
-    'thrombocyte': [code_anatomical_structure, Code('tbd', 'tbd', 'tbd')],
-    'thrombocyte_aggregate': [code_anatomical_structure, Code('tbd', 'tbd', 'tbd')],
+    'technically_unfit': [code_spatial_relational_concept, Code('111235', 'DCM', 'Unusable - Quality renders image unusable')],
+    'thrombocyte': [code_anatomical_structure, Code('16378004', 'SCT', 'Thrombocyte')],
+    'thrombocyte_aggregate': [code_anatomical_structure, Code('60649002', 'SCT', 'Platelet aggregation')],
     'unknown_blast': [code_anatomical_structure, Code('312256009', 'SCT', 'Blast cell')]
 }
