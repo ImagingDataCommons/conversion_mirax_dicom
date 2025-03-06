@@ -5,7 +5,7 @@ from git_utils import get_git_remote_url, get_git_commit_hash
 
 # Basic Metadata
 series_description_roi_anns = 'Regions of interest for cell classification (monolayer)'
-series_description_cell_anns = 'Cell annotations with cell labels'
+series_description_cell_anns = 'Cell bounding boxes with cell type labels'
 manufacturer = 'University Hospital Erlangen and Fraunhofer MEVIS'
 manufacturer_model_name = 'BMDeep data conversion'
 software_versions = get_git_remote_url(simplify=True)
@@ -71,5 +71,6 @@ cell_labels = {
     'technically_unfit': [code_spatial_relational_concept, Code('111235', 'DCM', 'Unusable - Quality renders image unusable')],
     'thrombocyte': [code_anatomical_structure, Code('16378004', 'SCT', 'Thrombocyte')],
     'thrombocyte_aggregate': [code_anatomical_structure, Code('60649002', 'SCT', 'Platelet aggregation')],
-    'unknown_blast': [code_anatomical_structure, Code('312256009', 'SCT', 'Blast cell')]
+    'unknown_blast': [code_anatomical_structure, Code('312256009', 'SCT', 'Blast cell')], 
+    'no_consensus_found': [[code_anatomical_structure, Code('414387006', 'SCT', 'Structure of haematological system')]]
 }
