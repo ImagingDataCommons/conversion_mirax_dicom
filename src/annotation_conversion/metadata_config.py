@@ -54,7 +54,7 @@ cell_labels = {
     'neutrophilic_metamyelocyte': [code_anatomical_structure, Code('50134008', 'SCT', 'Neutrophilic metamyelocyte')],
     'neutrophilic_myelocyte': [code_anatomical_structure, Code('4717004', 'SCT', 'Neutrophilic myelocyte')],
     'orthochromatic_erythroblast': [code_anatomical_structure, Code('113334004', 'SCT', 'Orthochromic erythroblast')],
-    'phagocytosis': [Code('tbd', 'tbd', 'tbd'), Code('56639005', 'SCT', 'Phagocytosis')],
+    'phagocytosis': [code_anatomical_structure, Code('56639005', 'SCT', 'Phagocytosis')],
     'plasma_cell': [code_anatomical_structure, Code('113335003', 'SCT', 'Plasma cell')],
     'polychromatic_erythroblast': [code_anatomical_structure, Code('16779009', 'SCT', 'Polychromatophilic erythroblast')],
     'proerythroblast': [code_anatomical_structure, Code('16671004', 'SCT', 'Proerythroblast')],
