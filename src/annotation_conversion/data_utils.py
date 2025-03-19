@@ -28,7 +28,7 @@ def _rename_cell_labels(cells: pd.DataFrame) -> pd.DataFrame:
                     'myeloblast': 'myeloid_precursor_cell'}
     
     cells['all_original_annotations'] = cells['all_original_annotations'].apply(lambda x: _replace_in_list(x, replacements))
-    cells['original_consensus_label'].replace(replacements, inplace=True)
+    cells['original_consensus_label'] = cells['original_consensus_label'].replace(replacements)
     return cells
  
 

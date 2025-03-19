@@ -2,6 +2,7 @@
 import logging
 import numpy as np
 import highdicom as hd
+from pathlib import Path
 from wsidicomizer import WsiDicomizer
 from pydicom import Dataset
 from pydicom.sr.codedict import codes
@@ -13,7 +14,8 @@ from data_utils import CellAnnotation, ROIAnnotation
 
 def process_annotation(
     ann: Union[CellAnnotation, ROIAnnotation],
-    transformer: hd.spatial.ImageToReferenceTransformer,
+    offset_transformer: Union[hd.spatial.ImageToImageTransformer,None], 
+    img_to_ref_transformer: hd.spatial.ImageToReferenceTransformer,
     graphic_type: hd.ann.GraphicTypeValues,
     annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues
     ) -> np.ndarray:
@@ -24,7 +26,10 @@ def process_annotation(
     ----------
     ann: CellAnnotation, ROIAnnotation
         Single annotation.  
-    transformer: hd.spatial.ImageToReferenceTransformer
+    offset_transformer: Union[hd.spatial.ImageToImageTransformer, None]
+        Transformer object to account for the offset that is introduced during 
+        conversion from MRXS to DICOM with wsidicomizer.  
+    img_to_ref_transformer: hd.spatial.ImageToReferenceTransformer
         Transformer object to map image coordinates to reference coordinates
         for the image.
     graphic_type: hd.ann.GraphicTypeValues, optional 
@@ -62,14 +67,16 @@ def process_annotation(
         raise ValueError(
             f'Graphic type "{graphic_type.value}" not supported.'
         )
-
-
+    
+    if offset_transformer: 
+        graphic_data = offset_transformer(graphic_data)
+    
     use_3d = (
         annotation_coordinate_type ==
         hd.ann.AnnotationCoordinateTypeValues.SCOORD3D
     )
     if use_3d:
-        graphic_data = transformer(graphic_data)
+        graphic_data = img_to_ref_transformer(graphic_data)
 
     return graphic_data.astype(np.float32)
 
@@ -77,6 +84,7 @@ def process_annotation(
 def get_graphic_data(
     annotations: List[CellAnnotation],
     source_image_metadata: Dataset,
+    mrxs_source_image_path: Path, 
     graphic_type: str = 'RECTANGLE',
     annotation_coordinate_type: str = 'SCOORD'
     ) -> List[np.ndarray]:
@@ -91,7 +99,8 @@ def get_graphic_data(
         Pydicom datasets containing the metadata of the reference image (already
         converted to DICOM format). This can be the full image datasets, but the
         PixelData attributes are not required.
-    
+    mrxs_source_image_path: Path
+        Path to MRXS source image. 
     graphic_type: str, optional 
         Graphic type to use to store all nuclei. Allowed options are 'RECTANGLE' (default)
         or 'POINT'.
@@ -120,23 +129,26 @@ def get_graphic_data(
     # Conversion of images from MIRAX to DICOM with wsidicomizer introduces an offset,
     # by which we need to shift the annotations to match the DICOM images. 
     # See https://github.com/imi-bigpicture/wsidicomizer/issues/56 for more information.
-    with WsiDicomizer.open() as slide: 
+    with WsiDicomizer.open(mrxs_source_image_path) as slide: 
+        print(slide.levels)
+        print(source_image_metadata.TotalPixelMatrixRows, source_image_metadata.TotalPixelMatrixColumns)
         spatial_information_mrxs = (
-            slide.metadata.image.image_coordinate_system.origin,
+            (slide.metadata.image.image_coordinate_system.origin.x, slide.metadata.image.image_coordinate_system.origin.y, 0.), 
             slide.metadata.image.image_coordinate_system.orientation.values,
-            slide.metadata.image.pixel_spacing
+            (slide.metadata.image.pixel_spacing.width, slide.metadata.image.pixel_spacing.height)
         )
-    
-    spatial_information_dcm = hd.spatial._get_spatial_information(source_image_metadata)
+    # if image size different
+    print(spatial_information_mrxs)
+    spatial_information_dcm = hd.spatial._get_spatial_information(source_image_metadata, for_total_pixel_matrix=True)
+    print(spatial_information_dcm)
     offset_transformer = hd.spatial.ImageToImageTransformer(
         image_position_from=spatial_information_mrxs[0],
         image_orientation_from=spatial_information_mrxs[1],
         pixel_spacing_from=spatial_information_mrxs[2],
         image_position_to=spatial_information_dcm[0],
         image_orientation_to=spatial_information_dcm[1],
-        pixel_spacing_to=spatial_information_dcm[2]
+        pixel_spacing_to=spatial_information_dcm[2], 
     )
-
     graphic_data = []
     for ann in annotations:
         graphic_item = process_annotation(

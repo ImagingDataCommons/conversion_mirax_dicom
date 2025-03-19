@@ -231,7 +231,7 @@ def parse_annotations_to_graphic_data(
         graphic_data = get_graphic_data(
             annotations=data['ann'],
             source_image_metadata=data['source_image'],
-            
+            mrxs_source_image_path=data['mrxs_source_image_path'],
             graphic_type=graphic_type,
             annotation_coordinate_type=annotation_coordinate_type,
         )
