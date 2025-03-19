@@ -30,6 +30,9 @@ def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]:
         - slide_id: str 
         - source_image: pydicom.Dataset 
             pydicom-read metadata excluding pixel data
+        - mrxs_image: Path 
+            Path to respective MRXS file before conversion into DICOM. 
+            Needed to extract amount of cropping that happened during conversion. 
     """
 
     def find_base_level(dcm_dir: Path) -> Path:
@@ -53,6 +56,25 @@ def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]:
     return data 
 
 
+def get_mrxs_image_path(mrxs_image_root: Path, slide_id: str) -> Path: 
+    """
+    Searches for MRXS file containing the slide_id.  
+
+    Parameters
+    ----------
+    mrxs_image_root: Path
+        Folder containing the orginal mrxs image data (in a nested folder structure)
+    slide_id: str 
+        Slide ID to be searched for.
+
+    Returns
+    -------
+    mrxs_image_path: Path
+        Full path to the respective MRXS file or a StopIteration error. . 
+    """
+    return next(mrxs_image_root.rglob(f'{slide_id}.mrxs'))
+
+
 def parse_roi_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Dict[str, Any]: 
     """ 
     Parses annotations from pd.DataFrame into a list of ROIAnnotations. 
@@ -65,6 +87,8 @@ def parse_roi_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Di
             Slide ID for the case.
         - source_image: pydicom.Dataset
             Base level source image for this case.
+        - mrxs_source_image_path: 
+            Path to MRXS source image. 
 
     Returns
     -------
@@ -104,7 +128,8 @@ def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_
             Slide ID for the case.
         - source_image: pydicom.Dataset
             Base level source image for this case.
-
+        - mrxs_source_image_path: 
+            Path to MRXS source image. 
     Returns
     -------
     data: dict[str, Any]
@@ -156,6 +181,8 @@ def parse_annotations_to_graphic_data(
             Slide ID for the case.
         - source_image: pydicom.Dataset
             Base level source image for this case.
+        - mrxs_source_image_path: 
+            Path to MRXS source image. 
         - ann: Union[list[CellAnnotations], list[ROIAnnotations]]
             List of cell annotations or ROI annotations. 
     graphic_type: hd.ann.GraphicTypeValues
@@ -204,6 +231,7 @@ def parse_annotations_to_graphic_data(
         graphic_data = get_graphic_data(
             annotations=data['ann'],
             source_image_metadata=data['source_image'],
+            
             graphic_type=graphic_type,
             annotation_coordinate_type=annotation_coordinate_type,
         )
@@ -428,6 +456,7 @@ def run(
     csv_cells: Path, 
     csv_rois: Path, 
     source_image_root_dir: Path,
+    mrxs_image_root: Path, 
     output_dir: Path,
     graphic_type: str = 'RECTANGLE',
     annotation_coordinate_type: str = 'SCOORD',
@@ -443,9 +472,11 @@ def run(
         output_dir.mkdir(exist_ok=True)
     
     cells, rois = preprocess_annotation_csvs(csv_cells, csv_rois)
+    cells.to_csv('/home/dschacherer/bmdeep_conversion/csv_cells.csv')
 
     for slide_id in os.listdir(source_image_root_dir):
         image_data = get_source_image_metadata(source_image_root_dir/slide_id)
+        image_data['mrxs_source_image_path'] = get_mrxs_image_path(mrxs_image_root, slide_id)
 
         # Create DICOM objects for ROI annotations 
         roi_ann_series_uid = hd.UID() # create unique identifier for the DICOM Series holding ROI annotation objects created here
@@ -495,9 +526,10 @@ def run(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run BMDeep dataset conversion from MRXS to DICOM on a local machine, but retrieving dataset from mounted server.') 
     parser.add_argument('image_data_dir', type=Path, help='Path to folder with converted DICOM image files. Each slide is supposed to be in a separate folder named after the slide ID.')
+    parser.add_argument('mrxs_image_dir', type=Path, help='Path to directory which should be searched for MRXS files.')
     parser.add_argument('cell_csv', type=Path, help='Path to CSV file holding cell annotation information.')
     parser.add_argument('roi_csv', type=Path, help='Path to CSV file holding ROI annotation information.')
     args = parser.parse_args()
 
-    run(args.cell_csv, args.roi_csv, source_image_root_dir=args.image_data_dir, output_dir=args.image_data_dir)
+    run(args.cell_csv, args.roi_csv, source_image_root_dir=args.image_data_dir, mrxs_image_root=args.mrxs_image_dir, output_dir=args.image_data_dir)
 
