@@ -2,9 +2,9 @@
 import logging
 import numpy as np
 import highdicom as hd
+from wsidicomizer import WsiDicomizer
 from pydicom import Dataset
 from pydicom.sr.codedict import codes
-from shapely.geometry import box
 from typing import List, Union
 
 import metadata_config
@@ -13,7 +13,6 @@ from data_utils import CellAnnotation, ROIAnnotation
 
 def process_annotation(
     ann: Union[CellAnnotation, ROIAnnotation],
-    offset_due_to_conversion: int, 
     transformer: hd.spatial.ImageToReferenceTransformer,
     graphic_type: hd.ann.GraphicTypeValues,
     annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues
@@ -24,11 +23,7 @@ def process_annotation(
     Parameters
     ----------
     ann: CellAnnotation, ROIAnnotation
-        Single annotation. 
-    offset_due_to_conversion: int, 
-        Conversion of images from MIRAX to DICOM with wsidicomizer introduces an offset,
-        by which we need to shift the annotations to match the DICOM images. 
-        See https://github.com/imi-bigpicture/wsidicomizer/issues/56 for more information. 
+        Single annotation.  
     transformer: hd.spatial.ImageToReferenceTransformer
         Transformer object to map image coordinates to reference coordinates
         for the image.
@@ -68,6 +63,7 @@ def process_annotation(
             f'Graphic type "{graphic_type.value}" not supported.'
         )
 
+
     use_3d = (
         annotation_coordinate_type ==
         hd.ann.AnnotationCoordinateTypeValues.SCOORD3D
@@ -95,6 +91,7 @@ def get_graphic_data(
         Pydicom datasets containing the metadata of the reference image (already
         converted to DICOM format). This can be the full image datasets, but the
         PixelData attributes are not required.
+    
     graphic_type: str, optional 
         Graphic type to use to store all nuclei. Allowed options are 'RECTANGLE' (default)
         or 'POINT'.
@@ -115,18 +112,37 @@ def get_graphic_data(
         annotation_coordinate_type
     ]
 
-    transformer = hd.spatial.ImageToReferenceTransformer.for_image(
+    img_to_ref_transformer = hd.spatial.ImageToReferenceTransformer.for_image(
         source_image_metadata,
         for_total_pixel_matrix=True,
     )
 
+    # Conversion of images from MIRAX to DICOM with wsidicomizer introduces an offset,
+    # by which we need to shift the annotations to match the DICOM images. 
+    # See https://github.com/imi-bigpicture/wsidicomizer/issues/56 for more information.
+    with WsiDicomizer.open() as slide: 
+        spatial_information_mrxs = (
+            slide.metadata.image.image_coordinate_system.origin,
+            slide.metadata.image.image_coordinate_system.orientation.values,
+            slide.metadata.image.pixel_spacing
+        )
+    
+    spatial_information_dcm = hd.spatial._get_spatial_information(source_image_metadata)
+    offset_transformer = hd.spatial.ImageToImageTransformer(
+        image_position_from=spatial_information_mrxs[0],
+        image_orientation_from=spatial_information_mrxs[1],
+        pixel_spacing_from=spatial_information_mrxs[2],
+        image_position_to=spatial_information_dcm[0],
+        image_orientation_to=spatial_information_dcm[1],
+        pixel_spacing_to=spatial_information_dcm[2]
+    )
+
     graphic_data = []
-    offset_due_to_conversion=3
     for ann in annotations:
         graphic_item = process_annotation(
             ann,
-            offset_due_to_conversion, 
-            transformer,
+            offset_transformer, 
+            img_to_ref_transformer,
             graphic_type,
             annotation_coordinate_type,
         )
