@@ -1,4 +1,3 @@
-import math
 import openslide
 import pydicom 
 import json
@@ -61,7 +60,7 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
     )
 
     optical_path = OpticalPath(
-        objective=objective
+        objective=[objective]
     )
      
     patient = Patient(
@@ -106,6 +105,7 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
 def build_additional_metadata(
         study_description: str, 
         image_series_description: str, 
+        patient_id: str, 
         patient_age: str,              
         aquisition_duration: float, 
         primary_diagnoses_code: Union[str, float],
@@ -124,7 +124,14 @@ def build_additional_metadata(
     ds.PatientAge = patient_age 
     ds.add_new([0x0018, 0x9073], 'FD', aquisition_duration) 
     ds.add_new([0x0012, 0x0060], 'LO', clinical_trial_coord_center) 
+
     ds.add_new([0x0012, 0x0021], 'LO', clinical_trial_protocol_name)
+    ds.add_new([0x0012, 0x0020], 'LO', clinical_trial_protocol_name) # add also ClinicalTrialProtocolID as required 
+    ds.add_new([0x0012, 0x0030], 'LO', '') # add empty ClinicalTrialSiteID as required
+    ds.add_new([0x0012, 0x0031], 'LO', '') # add empty ClinicalTrialSiteName as required
+    ds.add_new([0x0012, 0x0040], 'LO', patient_id) # add ClinicalTrialSubjectID as conditionally required
+
+    ds.add_new([0x0012, 0x0020], 'LO', clinical_trial_protocol_name)
     ds.add_new([0x0012, 0x0010], 'LO', clinical_trial_sponsor)
 
     if (isinstance(admitting_diagnoses_description[0], str) and isinstance(admitting_diagnoses_description[1], str)): # if not float, i.e., nan 

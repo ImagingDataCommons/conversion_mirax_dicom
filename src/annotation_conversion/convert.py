@@ -6,11 +6,25 @@ from pathlib import Path
 from wsidicomizer import WsiDicomizer
 from pydicom import Dataset
 from pydicom.sr.codedict import codes
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import metadata_config
 from data_utils import CellAnnotation, ROIAnnotation
 
+
+def _get_spatial_information_from_mrxs(mrxs_image_path: Path) -> Tuple[list[float], list[float], list[float]]: 
+    """ 
+    Function to retrieve spatial information such as image position, image orientation and pixel spacing 
+    of the base level from a MRXS slide. 
+    """
+    with WsiDicomizer.open(mrxs_image_path) as slide: 
+        spatial_information_mrxs = (
+            [slide.metadata.image.image_coordinate_system.origin.x, slide.metadata.image.image_coordinate_system.origin.y, 0.], 
+            slide.metadata.image.image_coordinate_system.orientation.values,
+            [slide.metadata.image.pixel_spacing.width, slide.metadata.image.pixel_spacing.height]
+        )
+    return spatial_information_mrxs
+    
 
 def process_annotation(
     ann: Union[CellAnnotation, ROIAnnotation],
@@ -130,25 +144,22 @@ def get_graphic_data(
     # by which we need to shift the annotations to match the DICOM images. 
     # See https://github.com/imi-bigpicture/wsidicomizer/issues/56 for more information.
     with WsiDicomizer.open(mrxs_source_image_path) as slide: 
-        print(slide.levels)
-        print(source_image_metadata.TotalPixelMatrixRows, source_image_metadata.TotalPixelMatrixColumns)
-        spatial_information_mrxs = (
-            (slide.metadata.image.image_coordinate_system.origin.x, slide.metadata.image.image_coordinate_system.origin.y, 0.), 
-            slide.metadata.image.image_coordinate_system.orientation.values,
-            (slide.metadata.image.pixel_spacing.width, slide.metadata.image.pixel_spacing.height)
+        mrxs_height, mrxs_width = slide.levels[0].size.height, slide.levels[0].size.width
+    
+    if mrxs_height != source_image_metadata.TotalPixelMatrixRows or mrxs_width != source_image_metadata.TotalPixelMatrixColumns:
+        spatial_information_mrxs = _get_spatial_information_from_mrxs(mrxs_source_image_path)
+        spatial_information_dcm = hd.spatial._get_spatial_information(source_image_metadata, for_total_pixel_matrix=True)
+        offset_transformer = hd.spatial.ImageToImageTransformer(
+            image_position_from=spatial_information_mrxs[0],
+            image_orientation_from=spatial_information_mrxs[1],
+            pixel_spacing_from=spatial_information_mrxs[2],
+            image_position_to=spatial_information_dcm[0],
+            image_orientation_to=spatial_information_dcm[1],
+            pixel_spacing_to=spatial_information_dcm[2], 
         )
-    # if image size different
-    print(spatial_information_mrxs)
-    spatial_information_dcm = hd.spatial._get_spatial_information(source_image_metadata, for_total_pixel_matrix=True)
-    print(spatial_information_dcm)
-    offset_transformer = hd.spatial.ImageToImageTransformer(
-        image_position_from=spatial_information_mrxs[0],
-        image_orientation_from=spatial_information_mrxs[1],
-        pixel_spacing_from=spatial_information_mrxs[2],
-        image_position_to=spatial_information_dcm[0],
-        image_orientation_to=spatial_information_dcm[1],
-        pixel_spacing_to=spatial_information_dcm[2], 
-    )
+    else: 
+        offset_transformer = None 
+
     graphic_data = []
     for ann in annotations:
         graphic_item = process_annotation(

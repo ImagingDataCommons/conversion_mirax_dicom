@@ -84,6 +84,7 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
         additional_metadata = build_additional_metadata(
             study_description='Bone marrow aspirate smear, pediatric leukemia', 
             image_series_description='Bone marrow aspirate smear, May-Gruenwald-Giemsa stain',
+            patient_id=patient_id,
             patient_age=clinical_metadata.loc[patient_id]['age'], 
             aquisition_duration=aquisition_duration, 
             primary_diagnoses_code=clinical_metadata.loc[patient_id]['ncit_concept_code'],

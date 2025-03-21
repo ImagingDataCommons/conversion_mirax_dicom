@@ -472,7 +472,6 @@ def run(
         output_dir.mkdir(exist_ok=True)
     
     cells, rois = preprocess_annotation_csvs(csv_cells, csv_rois)
-    cells.to_csv('/home/dschacherer/bmdeep_conversion/csv_cells.csv')
 
     for slide_id in os.listdir(source_image_root_dir):
         image_data = get_source_image_metadata(source_image_root_dir/slide_id)

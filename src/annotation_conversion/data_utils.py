@@ -23,10 +23,29 @@ def _rename_cell_labels(cells: pd.DataFrame) -> pd.DataFrame:
         lst = list_str.split(',')
         return ','.join([replacements.get(item, item) for item in lst])
     
-    replacements = {'lymphoblast': 'lymphoid_precursor_cell', 
-                    'monoblast': 'immature_monoblast', 
-                    'myeloblast': 'myeloid_precursor_cell'}
+    replacements = {
+        'lymphoblast': 'lymphoid_precursor_cell', 
+        'monoblast': 'immature_monoblast', 
+        'myeloblast': 'myeloid_precursor_cell'}
     
+    replacements_german_labels = {
+        'other:basophiler Erythroblast': 'basophilic_erythroblast', 
+        'other:Dichter Zellhaufen': 'technically_unfit', 
+        'other:Zellhaufen': 'technically_unfit',
+        'other:degranulierter Promyelozyt': 'degranulated_neutrophilic_myelocyte', 
+        'other:Hämophagozytose': 'phagocytosis', 
+        'other:Riesenthrombozyt': 'giant_platelet', 
+        'other:Osteoblast': 'unknown_blast',
+        'other:osteoblast': 'unknown_blast',
+        'other:Mikrogerinsel': 'thrombocyte_aggregate', 
+        'other:Plasma eines Megakaryozyten': 'damaged_cell', 
+        'other:Makrothrombozyt': 'giant_platelet', 
+        'other:Granula der kaputten Zelle': 'damaged_cell', 
+        'other:Kernreste': 'damaged_cell', 
+        'annotation_error': 'technically_unfit' 
+    }
+    
+    cells['all_original_annotations'] = cells['all_original_annotations'].apply(lambda x: _replace_in_list(x, replacements_german_labels))
     cells['all_original_annotations'] = cells['all_original_annotations'].apply(lambda x: _replace_in_list(x, replacements))
     cells['original_consensus_label'] = cells['original_consensus_label'].replace(replacements)
     return cells
@@ -40,6 +59,14 @@ def preprocess_annotation_csvs(cells_csv: Path, roi_csv: Path) -> pd.DataFrame:
 
     cells = pd.read_csv(cells_csv)
     cells = _rename_cell_labels(cells)
+    seta = set(cells['original_consensus_label'].unique())
+    l = []
+    for i, cl in cells['all_original_annotations']: 
+        l.extend(cl.split(','))
+    setb = set(l)
+    print(len(seta), len(setb))
+    print(seta.difference(setb))
+    print(setb.difference(seta))
     rois = pd.read_csv(roi_csv)
     return pd.merge(cells, rois[['id', 'slide_id']], 
                     left_on='rocellboxing_id', 
