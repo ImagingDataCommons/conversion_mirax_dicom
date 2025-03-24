@@ -35,8 +35,8 @@ def _rename_cell_labels(cells: pd.DataFrame) -> pd.DataFrame:
         'other:degranulierter Promyelozyt': 'degranulated_neutrophilic_myelocyte', 
         'other:Hämophagozytose': 'phagocytosis', 
         'other:Riesenthrombozyt': 'giant_platelet', 
-        'other:Osteoblast': 'unknown_blast',
-        'other:osteoblast': 'unknown_blast',
+        'other:Osteoblast': 'unknown_blast', # loosing information here, accepted because of rare occurence
+        'other:osteoblast': 'unknown_blast', # loosing information here, accepted because of rare occurence
         'other:Mikrogerinsel': 'thrombocyte_aggregate', 
         'other:Plasma eines Megakaryozyten': 'damaged_cell', 
         'other:Makrothrombozyt': 'giant_platelet', 
@@ -59,14 +59,6 @@ def preprocess_annotation_csvs(cells_csv: Path, roi_csv: Path) -> pd.DataFrame:
 
     cells = pd.read_csv(cells_csv)
     cells = _rename_cell_labels(cells)
-    seta = set(cells['original_consensus_label'].unique())
-    l = []
-    for i, cl in cells['all_original_annotations']: 
-        l.extend(cl.split(','))
-    setb = set(l)
-    print(len(seta), len(setb))
-    print(seta.difference(setb))
-    print(setb.difference(seta))
     rois = pd.read_csv(roi_csv)
     return pd.merge(cells, rois[['id', 'slide_id']], 
                     left_on='rocellboxing_id', 
