@@ -1,5 +1,6 @@
 """Utilities for converting annotations. Clear of cloud-specific things."""
 import logging
+import openslide
 import numpy as np
 import highdicom as hd
 from pathlib import Path
@@ -29,6 +30,7 @@ def _get_spatial_information_from_mrxs(mrxs_image_path: Path) -> Tuple[list[floa
 def process_annotation(
     ann: Union[CellAnnotation, ROIAnnotation],
     offset_transformer: Union[hd.spatial.ImageToImageTransformer,None], 
+    bounds: Tuple[int], 
     img_to_ref_transformer: hd.spatial.ImageToReferenceTransformer,
     graphic_type: hd.ann.GraphicTypeValues,
     annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues
@@ -61,7 +63,8 @@ def process_annotation(
         Simple Annotations.
     """      
     xmin, ymin, xmax, ymax = ann.bounding_box
-
+    xmin, ymin, xmax, ymax = xmin-bounds[0], ymin-bounds[1], xmax-bounds[0], ymax-bounds[1] 
+    
     if graphic_type == hd.ann.GraphicTypeValues.RECTANGLE:
         graphic_data = np.array(
             [
@@ -143,9 +146,11 @@ def get_graphic_data(
     # Conversion of images from MIRAX to DICOM with wsidicomizer introduces an offset,
     # by which we need to shift the annotations to match the DICOM images. 
     # See https://github.com/imi-bigpicture/wsidicomizer/issues/56 for more information.
-    with WsiDicomizer.open(mrxs_source_image_path) as slide: 
-        mrxs_height, mrxs_width = slide.levels[0].size.height, slide.levels[0].size.width
-    
+    # TODO: make easier understandable with offset and x-off, y-off 
+    with openslide.OpenSlide(mrxs_source_image_path) as slide: 
+        mrxs_height, mrxs_width = slide.dimensions[1], slide.dimensions[0]
+        x_off, y_off = int(slide.properties['openslide.bounds-x']), int(slide.properties['openslide.bounds-y'])
+
     if mrxs_height != source_image_metadata.TotalPixelMatrixRows or mrxs_width != source_image_metadata.TotalPixelMatrixColumns:
         spatial_information_mrxs = _get_spatial_information_from_mrxs(mrxs_source_image_path)
         spatial_information_dcm = hd.spatial._get_spatial_information(source_image_metadata, for_total_pixel_matrix=True)
@@ -162,14 +167,15 @@ def get_graphic_data(
 
     graphic_data = []
     for ann in annotations:
+        print('bbb', ann.bounding_box)
         graphic_item = process_annotation(
             ann,
             offset_transformer, 
+            (x_off, y_off),
             img_to_ref_transformer,
             graphic_type,
             annotation_coordinate_type,
         )
-
         graphic_data.append(graphic_item)   
     logging.info(f'Parsed {len(graphic_data)} annotations.')
 

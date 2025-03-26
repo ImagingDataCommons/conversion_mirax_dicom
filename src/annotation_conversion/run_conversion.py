@@ -48,7 +48,6 @@ def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]:
 
     base_level = find_base_level(slide_dir)
     ds = pydicom.dcmread(base_level, stop_before_pixels=True)
-    
     data = dict( 
         slide_id = slide_dir.stem, 
         source_image = ds
@@ -102,14 +101,17 @@ def parse_roi_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Di
     """
 
     ann = []
-    for _, row in annotations.iterrows(): 
-        x_min, y_min = row['x_in_slide'], row['y_in_slide']
-        x_max, y_max = x_min + row['width'], y_min + row['height']
+    for _, row in annotations.iterrows():
+        # TODO: extract and make nicer
+        x_min_enlarged, y_min_enlarged = row['x_in_slide'], row['y_in_slide']
+        x_max_enlarged, y_max_enlarged = x_min_enlarged + row['width'], y_min_enlarged + row['height']
+        center = [x_min_enlarged + (x_max_enlarged-x_min_enlarged)//2, y_min_enlarged + (y_max_enlarged-y_min_enlarged)//2]
+        x_min, x_max, y_min, y_max = center[0]-1124, center[0]+1124, center[1]-1124, center[1]+1124
         ann.append(ROIAnnotation(
             identifier=row['id'], 
             bounding_box=(x_min, y_min, x_max, y_max), 
         ))
-
+        print('bb', (x_min, y_min, x_max, y_max))
     data['ann_type'] = 'roi'
     data['ann'] = ann
     return data
@@ -492,6 +494,7 @@ def run(
             save_annotations(data, output_dir)
 
         # Create DICOM objects for cell annotations
+        """
         cell_ann_series_uid = hd.UID() # create unique identifier for the DICOM Series holding cell annotation objects created here
         slide_cells = filter_slide_annotations(cells, slide_id)
         if len(slide_cells) > 0: 
@@ -520,7 +523,7 @@ def run(
                                           annotation_coordinate_type=annotation_coordinate_type, 
                                           output_dir=output_dir)
             save_annotations(data, output_dir, ann_step='consensus')
-
+        """
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run BMDeep dataset conversion from MRXS to DICOM on a local machine, but retrieving dataset from mounted server.') 

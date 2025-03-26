@@ -17,6 +17,11 @@ class ROIAnnotation:
     bounding_box: tuple # xmin, ymin, xmax, ymax
 
 
+def _filter_rois_by_size(rois: pd.DataFrame) -> pd.DataFrame: 
+    # Consider only ROIs with 2458x2458 pixel size
+    return rois.loc[(rois['width'] == 2458) & (rois['height'] == 2458)]
+
+
 def _rename_cell_labels(cells: pd.DataFrame) -> pd.DataFrame: 
     
     def _replace_in_list(list_str: str, replacements: Dict[str, str]) -> str: 
@@ -60,6 +65,8 @@ def preprocess_annotation_csvs(cells_csv: Path, roi_csv: Path) -> pd.DataFrame:
     cells = pd.read_csv(cells_csv)
     cells = _rename_cell_labels(cells)
     rois = pd.read_csv(roi_csv)
+    rois = _filter_rois_by_size(rois)
+    print(rois, len(rois))
     return pd.merge(cells, rois[['id', 'slide_id']], 
                     left_on='rocellboxing_id', 
                     right_on = 'id', 
