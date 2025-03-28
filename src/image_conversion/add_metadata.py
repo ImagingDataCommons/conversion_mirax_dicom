@@ -9,6 +9,7 @@ from typing import Dict, Tuple, Union
 from wsidicom.conceptcode import (
     AnatomicPathologySpecimenTypesCode,
     ContainerTypeCode,
+    LenseCode,
     SpecimenCollectionProcedureCode,
     SpecimenSamplingProcedureCode,
     SpecimenStainsCode,
@@ -56,6 +57,7 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
     )
 
     objective = Objectives(
+        lenses=[LenseCode('High power non-immersion lens')],
         objective_power=mrxs_metadata['mirax.GENERAL.OBJECTIVE_MAGNIFICATION']
     )
 

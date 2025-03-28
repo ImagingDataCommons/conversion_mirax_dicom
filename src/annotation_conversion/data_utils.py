@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path 
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 
 @dataclass
@@ -15,6 +15,17 @@ class CellAnnotation:
 class ROIAnnotation: 
     identifier: int
     bounding_box: tuple # xmin, ymin, xmax, ymax
+
+
+def reduce_enlarged_rois(x_min_enlarged: int, y_min_enlarged: int, size: int) -> Tuple[int]:  
+    """ The ROIs that we have, have been enlarged by 10% (unidirectionally) from the orginal ones and need
+    to be reduced again to their original size. """
+    current_size_px, target_half_size_px = 2458, 1024
+    x_max_enlarged, y_max_enlarged = x_min_enlarged + current_size_px, y_min_enlarged + current_size_px
+    x_center = x_min_enlarged + (x_max_enlarged-x_min_enlarged)//2
+    y_center = y_min_enlarged + (y_max_enlarged-y_min_enlarged)//2
+    x_min, x_max, y_min, y_max = x_center-target_half_size_px, x_center+target_half_size_px, y_center-target_half_size_px, y_center+target_half_size_px
+    return x_min, x_max, y_min, y_max
 
 
 def _filter_rois_by_size(rois: pd.DataFrame) -> pd.DataFrame: 
@@ -66,7 +77,6 @@ def preprocess_annotation_csvs(cells_csv: Path, roi_csv: Path) -> pd.DataFrame:
     cells = _rename_cell_labels(cells)
     rois = pd.read_csv(roi_csv)
     rois = _filter_rois_by_size(rois)
-    print(rois, len(rois))
     return pd.merge(cells, rois[['id', 'slide_id']], 
                     left_on='rocellboxing_id', 
                     right_on = 'id', 

@@ -10,7 +10,7 @@ from pathlib import Path
 from time import time
 from typing import Any, Dict, Union  
 
-from data_utils import CellAnnotation, ROIAnnotation, preprocess_annotation_csvs, filter_slide_annotations
+from data_utils import CellAnnotation, ROIAnnotation, preprocess_annotation_csvs, filter_slide_annotations, reduce_enlarged_rois
 from convert import get_graphic_data, create_bulk_annotations_for_rois, create_bulk_annotations_for_cells
 
 
@@ -101,17 +101,12 @@ def parse_roi_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Di
     """
 
     ann = []
-    for _, row in annotations.iterrows():
-        # TODO: extract and make nicer
-        x_min_enlarged, y_min_enlarged = row['x_in_slide'], row['y_in_slide']
-        x_max_enlarged, y_max_enlarged = x_min_enlarged + row['width'], y_min_enlarged + row['height']
-        center = [x_min_enlarged + (x_max_enlarged-x_min_enlarged)//2, y_min_enlarged + (y_max_enlarged-y_min_enlarged)//2]
-        x_min, x_max, y_min, y_max = center[0]-1124, center[0]+1124, center[1]-1124, center[1]+1124
+    for _, row in annotations.iterrows():        
+        x_min, x_max, y_min, y_max = reduce_enlarged_rois(row['x_in_slide'], row['y_in_slide'], row['width'])
         ann.append(ROIAnnotation(
             identifier=row['id'], 
             bounding_box=(x_min, y_min, x_max, y_max), 
         ))
-        print('bb', (x_min, y_min, x_max, y_max))
     data['ann_type'] = 'roi'
     data['ann'] = ann
     return data

@@ -13,24 +13,9 @@ import metadata_config
 from data_utils import CellAnnotation, ROIAnnotation
 
 
-def _get_spatial_information_from_mrxs(mrxs_image_path: Path) -> Tuple[list[float], list[float], list[float]]: 
-    """ 
-    Function to retrieve spatial information such as image position, image orientation and pixel spacing 
-    of the base level from a MRXS slide. 
-    """
-    with WsiDicomizer.open(mrxs_image_path) as slide: 
-        spatial_information_mrxs = (
-            [slide.metadata.image.image_coordinate_system.origin.x, slide.metadata.image.image_coordinate_system.origin.y, 0.], 
-            slide.metadata.image.image_coordinate_system.orientation.values,
-            [slide.metadata.image.pixel_spacing.width, slide.metadata.image.pixel_spacing.height]
-        )
-    return spatial_information_mrxs
-    
-
 def process_annotation(
     ann: Union[CellAnnotation, ROIAnnotation],
-    offset_transformer: Union[hd.spatial.ImageToImageTransformer,None], 
-    bounds: Tuple[int], 
+    openslide_bounds: Tuple[int], 
     img_to_ref_transformer: hd.spatial.ImageToReferenceTransformer,
     graphic_type: hd.ann.GraphicTypeValues,
     annotation_coordinate_type: hd.ann.AnnotationCoordinateTypeValues
@@ -42,9 +27,8 @@ def process_annotation(
     ----------
     ann: CellAnnotation, ROIAnnotation
         Single annotation.  
-    offset_transformer: Union[hd.spatial.ImageToImageTransformer, None]
-        Transformer object to account for the offset that is introduced during 
-        conversion from MRXS to DICOM with wsidicomizer.  
+    openslide_bounds: Tuple[int]
+        Openslide image bounds to be subtracted from the annotation coordinates.  
     img_to_ref_transformer: hd.spatial.ImageToReferenceTransformer
         Transformer object to map image coordinates to reference coordinates
         for the image.
@@ -62,8 +46,8 @@ def process_annotation(
         Numpy array of float32 coordinates to include in the Bulk Microscopy
         Simple Annotations.
     """      
-    xmin, ymin, xmax, ymax = ann.bounding_box
-    xmin, ymin, xmax, ymax = xmin-bounds[0], ymin-bounds[1], xmax-bounds[0], ymax-bounds[1] 
+    xmin, ymin, xmax, ymax = ann.bounding_box 
+    xmin, ymin, xmax, ymax = xmin-openslide_bounds[0], ymin-openslide_bounds[1], xmax-openslide_bounds[0], ymax-openslide_bounds[1] 
     
     if graphic_type == hd.ann.GraphicTypeValues.RECTANGLE:
         graphic_data = np.array(
@@ -84,10 +68,7 @@ def process_annotation(
         raise ValueError(
             f'Graphic type "{graphic_type.value}" not supported.'
         )
-    
-    if offset_transformer: 
-        graphic_data = offset_transformer(graphic_data)
-    
+
     use_3d = (
         annotation_coordinate_type ==
         hd.ann.AnnotationCoordinateTypeValues.SCOORD3D
@@ -143,35 +124,16 @@ def get_graphic_data(
         for_total_pixel_matrix=True,
     )
 
-    # Conversion of images from MIRAX to DICOM with wsidicomizer introduces an offset,
-    # by which we need to shift the annotations to match the DICOM images. 
-    # See https://github.com/imi-bigpicture/wsidicomizer/issues/56 for more information.
-    # TODO: make easier understandable with offset and x-off, y-off 
+    # The original annotations were created from the original MRXS slide corner. Since wsidicomizer crops the 
+    # images based on the openslide bounds, we need to subtract the openslide bounds also from the annotation coordinates. 
     with openslide.OpenSlide(mrxs_source_image_path) as slide: 
-        mrxs_height, mrxs_width = slide.dimensions[1], slide.dimensions[0]
-        x_off, y_off = int(slide.properties['openslide.bounds-x']), int(slide.properties['openslide.bounds-y'])
-
-    if mrxs_height != source_image_metadata.TotalPixelMatrixRows or mrxs_width != source_image_metadata.TotalPixelMatrixColumns:
-        spatial_information_mrxs = _get_spatial_information_from_mrxs(mrxs_source_image_path)
-        spatial_information_dcm = hd.spatial._get_spatial_information(source_image_metadata, for_total_pixel_matrix=True)
-        offset_transformer = hd.spatial.ImageToImageTransformer(
-            image_position_from=spatial_information_mrxs[0],
-            image_orientation_from=spatial_information_mrxs[1],
-            pixel_spacing_from=spatial_information_mrxs[2],
-            image_position_to=spatial_information_dcm[0],
-            image_orientation_to=spatial_information_dcm[1],
-            pixel_spacing_to=spatial_information_dcm[2], 
-        )
-    else: 
-        offset_transformer = None 
+        openslide_bounds = int(slide.properties['openslide.bounds-x']), int(slide.properties['openslide.bounds-y'])
 
     graphic_data = []
     for ann in annotations:
-        print('bbb', ann.bounding_box)
         graphic_item = process_annotation(
             ann,
-            offset_transformer, 
-            (x_off, y_off),
+            openslide_bounds, 
             img_to_ref_transformer,
             graphic_type,
             annotation_coordinate_type,
