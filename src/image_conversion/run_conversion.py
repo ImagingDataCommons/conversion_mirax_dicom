@@ -46,7 +46,7 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
     # Configuration
     local_input = local_work_dir.joinpath('be_converted')
     local_output = local_work_dir.joinpath('is_converted')
-    log_file = local_work_dir.joinpath('log.txt')
+    log_file = local_work_dir.joinpath('image_conversion_log.txt')
     gaia_results_dir = gaia_work_dir.joinpath('bmdeep_DICOM_converted') 
     for dir in [local_input, local_output, gaia_results_dir]: 
         dir.mkdir(parents=True, exist_ok=True)
@@ -109,6 +109,10 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
         clean_up([local_mrxs_file, local_mrxs_file.with_suffix(''), converted_dicom_dir])
         with open(log_file, 'a') as log: 
             log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - Successfully converted {gaia_mrxs_file}\n')
+
+    # Remove empty folders created for conversion 
+    os.rmdir(local_input)
+    os.rmdir(local_output)
 
 
 

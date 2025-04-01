@@ -380,7 +380,7 @@ def create_dcm_annotations(
         del data['cell_identifiers'] # Save some memory
         del data['roi_identifiers'] # Save some memory
         del data['labels'] # Save some memory
-    
+
     return data
 
 
@@ -470,7 +470,8 @@ def run(
     
     cells, rois = preprocess_annotation_csvs(csv_cells, csv_rois)
 
-    for slide_id in os.listdir(source_image_root_dir):
+    slide_ids = [item for item in os.listdir(source_image_root_dir) if os.path.isdir(source_image_root_dir/item)]
+    for slide_id in slide_ids:
         image_data = get_source_image_metadata(source_image_root_dir/slide_id)
         image_data['mrxs_source_image_path'] = get_mrxs_image_path(mrxs_image_root, slide_id)
 
@@ -489,7 +490,6 @@ def run(
             save_annotations(data, output_dir)
 
         # Create DICOM objects for cell annotations
-        """
         cell_ann_series_uid = hd.UID() # create unique identifier for the DICOM Series holding cell annotation objects created here
         slide_cells = filter_slide_annotations(cells, slide_id)
         if len(slide_cells) > 0: 
@@ -518,7 +518,7 @@ def run(
                                           annotation_coordinate_type=annotation_coordinate_type, 
                                           output_dir=output_dir)
             save_annotations(data, output_dir, ann_step='consensus')
-        """
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run BMDeep dataset conversion from MRXS to DICOM on a local machine, but retrieving dataset from mounted server.') 

@@ -306,6 +306,7 @@ def create_bulk_annotations_for_cells(
                     )
                 ],
             )
+
             groups.append(group)
             group_number += 1
 

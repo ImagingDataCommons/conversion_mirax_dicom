@@ -72,5 +72,5 @@ cell_labels = {
     'thrombocyte': [code_anatomical_structure, Code('16378004', 'SCT', 'Thrombocyte')],
     'thrombocyte_aggregate': [code_anatomical_structure, Code('60649002', 'SCT', 'Platelet aggregation')],
     'unknown_blast': [code_anatomical_structure, Code('312256009', 'SCT', 'Blast cell')], 
-    'no_consensus_found': [[code_anatomical_structure, Code('414387006', 'SCT', 'Structure of haematological system')]]
+    'no_consensus_found': [code_anatomical_structure, Code('414387006', 'SCT', 'Structure of haematological system')]
 }
