@@ -11,14 +11,14 @@ def run_dciodvfy(dicom3tools: Path, slide_dir: Path) -> None:
         result = subprocess.run([f'{dicom3tools}/dciodvfy', f'{slide_dir/dcm_file}'], capture_output=True, text=True)
         print(result)
         # if error/warning: make extra log file 
-        with open(f'{slide_dir}/dciodcfy_output.txt', 'a') as log: 
+        with open(f'{slide_dir.parent}/{slide_dir.stem}_dciodcfy_output.txt', 'a') as log: 
             log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - {dcm_file}\n')
             log.write(result.stderr)
 
 
 def run_dcentvfy(dicom3tools: Path, slide_dir: str): 
     result = subprocess.run([f'{dicom3tools}/dcentvfy', f'{slide_dir}'], capture_output=True, text=True)
-    with open(f'{slide_dir}/dcentvfy_output.txt', 'a') as log: 
+    with open(f'{slide_dir.parent}/{slide_dir.stem}_dcentvfy_output.txt', 'a') as log: 
         log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
         log.write(result.stderr)
 
@@ -26,8 +26,8 @@ def run_dcentvfy(dicom3tools: Path, slide_dir: str):
 def run(dicom3tools: Path, data_dir: Path) -> None:     
     slide_ids = [item for item in os.listdir(data_dir) if os.path.isdir(data_dir/item)]
     for slide_id in slide_ids: 
-        run_dciodvfy(dicom3tools, data_dir/slide_id) 
         run_dcentvfy(dicom3tools, data_dir/slide_id)
+        run_dciodvfy(dicom3tools, data_dir/slide_id) 
 
 
 if __name__ == '__main__':
