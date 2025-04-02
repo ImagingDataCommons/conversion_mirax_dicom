@@ -18,7 +18,5 @@ This repository includes:
 - see [BMDeep Conversion notes](https://docs.google.com/document/d/1yobF48SQlx4rMwwsj-T324Nfu25PJt5CFDlQB9E1Z-8/edit?tab=t.0)
 - see PW42 Project Page: [Conversion of bone marrow smear dataset from MIRAX format into DICOM](https://projectweek.na-mic.org/PW42_2025_GranCanaria/Projects/ConversionOfBoneMarrowSmearDatasetFromMiraxFormatIntoDicom/)
 
-### Potential problems (identified by manual inspection)
-- Specimen UID different for each SOPInstance in Series -> should be the same
-- X Offset in Slide Coordinate System --> how can I check that? 
-- Are 10 DICOM levels too much? 
+### Open TODOs
+- improve loggin in annotation conversion 
