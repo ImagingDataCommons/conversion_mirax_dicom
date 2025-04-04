@@ -9,7 +9,6 @@ def run_dciodvfy(dicom3tools: Path, slide_dir: Path) -> None:
     dcm_files = [f for f in os.listdir(slide_dir) if f.endswith('.dcm')]
     for dcm_file in dcm_files: 
         result = subprocess.run([f'{dicom3tools}/dciodvfy', f'{slide_dir/dcm_file}'], capture_output=True, text=True)
-        print(result)
         # if error/warning: make extra log file 
         with open(f'{slide_dir.parent}/{slide_dir.stem}_dciodcfy_output.txt', 'a') as log: 
             log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - {dcm_file}\n')
@@ -17,10 +16,13 @@ def run_dciodvfy(dicom3tools: Path, slide_dir: Path) -> None:
 
 
 def run_dcentvfy(dicom3tools: Path, slide_dir: str): 
-    result = subprocess.run([f'{dicom3tools}/dcentvfy', f'{slide_dir}'], capture_output=True, text=True)
+    result = subprocess.run([f'{dicom3tools}/dcentvfy', f'{slide_dir}/*'], capture_output=True, text=True, shell=True)
     with open(f'{slide_dir.parent}/{slide_dir.stem}_dcentvfy_output.txt', 'a') as log: 
-        log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
-        log.write(result.stderr)
+        if len(result.stderr) > 0: 
+            log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
+            log.write(result.stderr)
+        else: 
+            log.write('No errors/warnings occurred.')
 
 
 def run(dicom3tools: Path, data_dir: Path) -> None:     
