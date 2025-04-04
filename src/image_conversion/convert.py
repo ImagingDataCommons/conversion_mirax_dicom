@@ -11,7 +11,7 @@ def wsidicomizer_convert(input_file: Path, output_folder: Path, metadata: WsiDic
         metadata=metadata,
         metadata_post_processor=additional_metadata,
         tile_size=1024, # wsidicom seems to not be able to infer tile size from mrxs automatically, so will use this one provided here.
-        include_levels=[0,2,4,6], 
+        include_levels=[0,2,4,6,8,10], 
         include_label=False, 
         include_overview=True, 
         workers=4, 
