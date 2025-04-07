@@ -47,7 +47,8 @@ def process_annotation(
         Simple Annotations.
     """      
     xmin, ymin, xmax, ymax = ann.bounding_box 
-    xmin, ymin, xmax, ymax = xmin-openslide_bounds[0], ymin-openslide_bounds[1], xmax-openslide_bounds[0], ymax-openslide_bounds[1] 
+    xmin, ymin, xmax, ymax = xmin-openslide_bounds[0], ymin-openslide_bounds[1], xmax-openslide_bounds[0], ymax-openslide_bounds[1]
+    print('bounds', openslide_bounds, xmin, ymin, xmax, ymax) 
     
     if graphic_type == hd.ann.GraphicTypeValues.RECTANGLE:
         graphic_data = np.array(
@@ -76,6 +77,8 @@ def process_annotation(
     if use_3d:
         graphic_data = img_to_ref_transformer(graphic_data)
 
+    print('graphic', graphic_data)
+    print('graphicfloat', graphic_data.astype(np.float32))
     return graphic_data.astype(np.float32)
 
 
@@ -140,7 +143,6 @@ def get_graphic_data(
         )
         graphic_data.append(graphic_item)   
     logging.info(f'Parsed {len(graphic_data)} annotations.')
-
     return graphic_data
 
 

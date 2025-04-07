@@ -107,6 +107,7 @@ def parse_roi_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Di
             identifier=row['id'], 
             bounding_box=(x_min, y_min, x_max, y_max), 
         ))
+
     data['ann_type'] = 'roi'
     data['ann'] = ann
     return data
@@ -142,6 +143,7 @@ def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_
     for _, row in annotations.iterrows(): 
         x_min, y_min = row['x_in_slide'], row['y_in_slide']
         x_max, y_max = x_min + row['cell_width'], y_min + row['cell_height']
+
         if ann_step == 'consensus': 
             cell_label = row['original_consensus_label']
             if isinstance(cell_label, float): # i.e. is nan - no consensus was found 
@@ -497,7 +499,7 @@ def run(
             slide_cells['ann_steps'] = slide_cells['all_original_annotations'].apply(lambda x: len(x.split(',')))
             ann_steps = list(range(slide_cells['ann_steps'].max())) # zero-based
             for ann_step in ann_steps: 
-                slide_cells_this_ann_step = slide_cells[slide_cells['ann_steps'] > ann_step] 
+                slide_cells_this_ann_step = slide_cells[slide_cells['ann_steps'] > ann_step]
                 data = parse_cell_annotations(image_data, slide_cells_this_ann_step, ann_step)
                 data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
                 data = create_dcm_annotations(data=data, 
@@ -507,7 +509,7 @@ def run(
                                               annotation_coordinate_type=annotation_coordinate_type, 
                                               output_dir=output_dir)  
                 save_annotations(data, output_dir, ann_step)
-
+        
             # Also encode the final consensus including those cells where no consensus could be found. 
             data = parse_cell_annotations(image_data, slide_cells, ann_step='consensus')
             data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
