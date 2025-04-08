@@ -492,7 +492,6 @@ def run(
             save_annotations(data, output_dir)
 
         # Create DICOM objects for cell annotations
-        cell_ann_series_uid = hd.UID() # create unique identifier for the DICOM Series holding cell annotation objects created here
         slide_cells = filter_slide_annotations(cells, slide_id)
         if len(slide_cells) > 0: 
             # Loop over all the different steps / consensus 
@@ -503,7 +502,7 @@ def run(
                 data = parse_cell_annotations(image_data, slide_cells_this_ann_step, ann_step)
                 data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
                 data = create_dcm_annotations(data=data, 
-                                              series_uid=cell_ann_series_uid, 
+                                              series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_step created here
                                               sop_instance_number=ann_step+1, 
                                               graphic_type=graphic_type, 
                                               annotation_coordinate_type=annotation_coordinate_type, 
@@ -514,7 +513,7 @@ def run(
             data = parse_cell_annotations(image_data, slide_cells, ann_step='consensus')
             data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
             data = create_dcm_annotations(data=data, 
-                                          series_uid=cell_ann_series_uid, 
+                                          series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_step created here 
                                           sop_instance_number=ann_steps[-1]+1, 
                                           graphic_type=graphic_type, 
                                           annotation_coordinate_type=annotation_coordinate_type, 
