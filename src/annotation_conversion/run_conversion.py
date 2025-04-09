@@ -1,5 +1,6 @@
 """Entrypoint for annotation conversion."""
 import os
+import sys
 import datetime
 import pydicom 
 import logging
@@ -10,7 +11,7 @@ from pathlib import Path
 from time import time
 from typing import Any, Dict, Union  
 
-from data_utils import CellAnnotation, ROIAnnotation, preprocess_annotation_csvs, filter_slide_annotations, reduce_enlarged_rois
+from data_utils import ROIAnnotation, preprocess_annotation_csvs, filter_slide_annotations, parse_cell_annotations, parse_roi_annotations
 from convert import get_graphic_data, create_bulk_annotations_for_rois, create_bulk_annotations_for_cells
 
 
@@ -72,94 +73,6 @@ def get_mrxs_image_path(mrxs_image_root: Path, slide_id: str) -> Path:
         Full path to the respective MRXS file or a StopIteration error. . 
     """
     return next(mrxs_image_root.rglob(f'{slide_id}.mrxs'))
-
-
-def parse_roi_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Dict[str, Any]: 
-    """ 
-    Parses annotations from pd.DataFrame into a list of ROIAnnotations. 
-
-    Parameters
-    ----------
-    data: dict[str, Any]
-        Input data packed into a dict, including at least:
-        - slide_id: str
-            Slide ID for the case.
-        - source_image: pydicom.Dataset
-            Base level source image for this case.
-        - mrxs_source_image_path: 
-            Path to MRXS source image. 
-
-    Returns
-    -------
-    data: dict[str, Any]
-        Output data packed into a dict. This will contain the same keys as
-        the input dictionary, plus the following additional keys:
-        - ann_type: str
-            Whether it's ROI or cell annotations.
-        - ann: list[ROIAnnotation]
-            List of annotations. 
-    """
-
-    ann = []
-    for _, row in annotations.iterrows():        
-        x_min, x_max, y_min, y_max = reduce_enlarged_rois(row['x_in_slide'], row['y_in_slide'], row['width'])
-        ann.append(ROIAnnotation(
-            identifier=row['id'], 
-            bounding_box=(x_min, y_min, x_max, y_max), 
-        ))
-
-    data['ann_type'] = 'roi'
-    data['ann'] = ann
-    return data
-
-
-def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_step: Union[int, str]) -> Dict[str, Any]: 
-    """ 
-    Parses annotations from pd.DataFrame into a list of CellAnnotations. Introduces the label "no_consensus_found" in cases
-    where no consensus label could be generated.  
-
-    Parameters
-    ----------
-    data: dict[str, Any]
-        Input data packed into a dict, including at least:
-        - slide_id: str
-            Slide ID for the case.
-        - source_image: pydicom.Dataset
-            Base level source image for this case.
-        - mrxs_source_image_path: 
-            Path to MRXS source image. 
-    Returns
-    -------
-    data: dict[str, Any]
-        Output data packed into a dict. This will contain the same keys as
-        the input dictionary, plus the following additional keys:
-        - ann_type: str
-            Whether it's ROI or cell annotations.
-        - ann: list[CellAnnotation]
-            List of annotations. 
-    """
-
-    ann = []
-    for _, row in annotations.iterrows(): 
-        x_min, y_min = row['x_in_slide'], row['y_in_slide']
-        x_max, y_max = x_min + row['cell_width'], y_min + row['cell_height']
-
-        if ann_step == 'consensus': 
-            cell_label = row['original_consensus_label']
-            if isinstance(cell_label, float): # i.e. is nan - no consensus was found 
-                cell_label = 'no_consensus_found'
-        else: 
-            cell_label = row['all_original_annotations'].split(',')[ann_step]
-        ann.append(CellAnnotation(
-            cell_identifier=row['cell_id'], 
-            roi_identifier=row['rocellboxing_id'],
-            bounding_box=(x_min, y_min, x_max, y_max), 
-            label=cell_label
-        ))
-
-    data['ann_type'] = 'cell'
-    data['ann'] = ann
-    return data
 
 
 def parse_annotations_to_graphic_data(
@@ -495,7 +408,7 @@ def run(
         slide_cells = filter_slide_annotations(cells, slide_id)
         if len(slide_cells) > 0: 
             # Loop over all the different steps / consensus 
-            slide_cells['ann_steps'] = slide_cells['all_original_annotations'].apply(lambda x: len(x.split(',')))
+            
             ann_steps = list(range(slide_cells['ann_steps'].max())) # zero-based
             for ann_step in ann_steps: 
                 slide_cells_this_ann_step = slide_cells[slide_cells['ann_steps'] > ann_step]
@@ -525,9 +438,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run BMDeep dataset conversion from MRXS to DICOM on a local machine, but retrieving dataset from mounted server.') 
     parser.add_argument('image_data_dir', type=Path, help='Path to folder with converted DICOM image files. Each slide is supposed to be in a separate folder named after the slide ID.')
     parser.add_argument('mrxs_image_dir', type=Path, help='Path to directory which should be searched for MRXS files.')
-    parser.add_argument('cell_csv', type=Path, help='Path to CSV file holding cell annotation information.')
-    parser.add_argument('roi_csv', type=Path, help='Path to CSV file holding ROI annotation information.')
+    parser.add_argument('--cell_csvs', type=Path, nargs='+', help='Path to CSV file(s) holding cell annotation information. \
+                        Required columns: "cell_id", "slide_id", "x1", "y1", "x2", "y2".')
+    parser.add_argument('--roi_csvs', type=Path, nargs='+', help='Path to CSV file(s) holding ROI annotation information.\
+                        Required columns: "roi_id", "slide_id", "x1", "y1", "x2", "y2".')
     args = parser.parse_args()
 
-    run(args.cell_csv, args.roi_csv, source_image_root_dir=args.image_data_dir, mrxs_image_root=args.mrxs_image_dir, output_dir=args.image_data_dir)
+    if not (args.cell_csvs or args.roi_csvs):
+        print('Error: You must provide at least one of --cell_csv or --roi_csv.')
+        sys.exit(1)
+
+    run(args.cell_csvs, args.roi_csvs, source_image_root_dir=args.image_data_dir, mrxs_image_root=args.mrxs_image_dir, output_dir=args.image_data_dir)
 
