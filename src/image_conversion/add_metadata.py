@@ -112,7 +112,6 @@ def build_additional_metadata(
         aquisition_duration: float, 
         primary_diagnoses_code: Union[str, float],
         primary_diagnoses_code_meaning: Union[str, float],  
-        admitting_diagnoses_description: Union[Tuple[str], Tuple[float]], 
         clinical_trial_coord_center: str, 
         clinical_trial_protocol_name: str, 
         clinical_trial_sponsor: str, 
@@ -136,12 +135,8 @@ def build_additional_metadata(
     ds.add_new([0x0012, 0x0020], 'LO', clinical_trial_protocol_name)
     ds.add_new([0x0012, 0x0010], 'LO', clinical_trial_sponsor)
 
-    if (isinstance(admitting_diagnoses_description[0], str) and isinstance(admitting_diagnoses_description[1], str)): # if not float, i.e., nan 
-        admitting_diagnoses = ','.join([admitting_diagnoses_description[0], admitting_diagnoses_description[1]])
-        ds.add_new([0x0008, 0x1080], 'LO', admitting_diagnoses)
-
-
     if isinstance(primary_diagnoses_code, str): # if not float, i.e., nan 
+        ds.add_new([0x0008, 0x1080], 'LO', primary_diagnoses_code_meaning) # add AdmittingDiagnosesDescription
         ds.add_new([0x0008, 0x1084], 'SQ', [pydicom.Dataset()]) # add AdmittingDiagnosesCodeSequence
         ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0100], 'SH', primary_diagnoses_code) # CodeValue
         ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0102], 'SH', 'NCIt') # CodingSchemeDesignator

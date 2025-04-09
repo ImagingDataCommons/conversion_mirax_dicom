@@ -89,7 +89,6 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
             aquisition_duration=aquisition_duration, 
             primary_diagnoses_code=clinical_metadata.loc[patient_id]['ncit_concept_code'],
             primary_diagnoses_code_meaning=nci_thesaurus[clinical_metadata.loc[patient_id]['ncit_concept_code']],  
-            admitting_diagnoses_description=(clinical_metadata.loc[patient_id]['leukemia_type'], clinical_metadata.loc[patient_id]['leukemia_subtype']),  
             clinical_trial_coord_center='University Hospital Erlangen', 
             clinical_trial_protocol_name='BoneMarrowWSI-PediatricLeukemia', 
             clinical_trial_sponsor='Uni Hospital Erlangen, Fraunhofer MEVIS, Uni Erlangen-Nuremberg', 
