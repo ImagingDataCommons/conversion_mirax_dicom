@@ -233,6 +233,7 @@ def create_bulk_annotations_for_cells(
     cell_identifiers: list[int],
     roi_identifiers: list[int], 
     labels: list[str],
+    ann_iteration: str, 
     series_uid: hd.UID, 
     sop_instance_number: int,
     graphic_type: str = 'RECTANGLE',
@@ -254,8 +255,10 @@ def create_bulk_annotations_for_cells(
         Identifier for each cell annotation indicating which ROI they are part of. 
     labels: list[str]
         Label for each annotation taken as is from input. 
+    ann_iteration: str 
+        Identifier of the step in the annotation process.
     series_uid: hd.UID
-        DICOM SeriesInstanceUID. All annotation steps, plus consensus and ROIs go into the same Series. 
+        DICOM SeriesInstanceUID. Each annotation steps, consensus and ROIs go into a separate Series. 
     sop_instance_number: 
         Number of the SOPInstance within the DICOM Series. 
     graphic_type: str, optional 
@@ -310,7 +313,7 @@ def create_bulk_annotations_for_cells(
             group_number += 1
 
     annotations = hd.ann.MicroscopyBulkSimpleAnnotations(
-        series_description=metadata_config.series_description_cell_anns,
+        series_description=metadata_config.series_description_cell_anns(ann_iteration),
         source_images=[source_image_metadata],
         annotation_coordinate_type=annotation_coordinate_type,
         annotation_groups=groups,
@@ -324,3 +327,5 @@ def create_bulk_annotations_for_cells(
         device_serial_number=metadata_config.device_serial_number,
     )
     return annotations
+
+# TODO: add clinicaltrialseriesID
