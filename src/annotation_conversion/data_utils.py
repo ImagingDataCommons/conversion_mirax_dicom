@@ -78,7 +78,7 @@ def _rename_cell_labels(cells: pd.DataFrame) -> pd.DataFrame:
 
 
 def _add_number_of_annotation_steps(annotations: pd.DataFrame) -> pd.DataFrame:
-    annotations['ann_iterations'] = annotations['all_original_annotations'].apply(lambda x: len(x.split(',')))
+    annotations['ann_sessions'] = annotations['all_original_annotations'].apply(lambda x: len(x.split(',')))
     return annotations
 
 def filter_slide_annotations(annotations: pd.DataFrame, slide_id: str) -> List[CellAnnotation]: 
@@ -124,7 +124,7 @@ def parse_roi_annotations(data: Dict[str, Any], annotations: pd.DataFrame) -> Di
     return data
 
 
-def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_iteration: Union[int, str]) -> Dict[str, Any]: 
+def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_session: Union[int, str]) -> Dict[str, Any]: 
     """ 
     Parses annotations from pd.DataFrame into a list of CellAnnotations. 
 
@@ -153,10 +153,10 @@ def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_
     for _, row in annotations.iterrows(): 
         x_min, x_max, y_min, y_max = row['x1'], row['x2'], row['y1'], row['y2']
 
-        if ann_iteration == 'consensus': 
+        if ann_session == 'consensus': 
             cell_label = row['original_consensus_label']
         else: 
-            cell_label = row['all_original_annotations'].split(',')[ann_iteration]
+            cell_label = row['all_original_annotations'].split(',')[ann_session]
         ann.append(CellAnnotation(
             cell_identifier=row['cell_id'], 
             roi_identifier=row['roi_id'],

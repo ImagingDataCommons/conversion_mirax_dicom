@@ -1,3 +1,5 @@
+import pydicom
+import pydicom.dataelem 
 import highdicom as hd
 from pydicom.sr.coding import Code
 from git_utils import get_git_remote_url, get_git_commit_hash
@@ -5,13 +7,22 @@ from git_utils import get_git_remote_url, get_git_commit_hash
 
 # Basic Metadata
 series_description_roi_anns = 'Monolayer regions of interest for cell classification'
-def series_description_cell_anns(ann_iteration: str) -> str: 
-    return f'Cell bounding boxes with cell type labels; annotation step: {ann_iteration}'
 manufacturer = 'University Hospital Erlangen and Fraunhofer MEVIS'
 manufacturer_model_name = 'BMDeep data conversion'
 software_versions = get_git_remote_url(simplify=True)
 device_serial_number = get_git_commit_hash()
 algorithm_type = hd.ann.AnnotationGroupGenerationTypeValues.MANUAL
+
+
+# Metadata functions
+def series_description_cell_anns(ann_session: str) -> str: 
+    if ann_session == 'consensus': 
+        return f'Cell bounding boxes with consensus cell type labels'
+    return f'Cell bounding boxes with cell type labels; annotation session: {ann_session}'
+
+def get_clinical_trial_series_id(annotation_session: str) -> pydicom.Dataset:
+    return pydicom.dataelem.DataElement(0x00120071, 'LO', annotation_session)
+
 
 # Labels 
 code_physical_object = Code('260787004', 'SCT', 'Physical object')

@@ -70,7 +70,7 @@ def get_mrxs_image_path(mrxs_image_root: Path, slide_id: str) -> Path:
     Returns
     -------
     mrxs_image_path: Path
-        Full path to the respective MRXS file or a StopIteration error. . 
+        Full path to the respective MRXS file or a Stopsession error. . 
     """
     return next(mrxs_image_root.rglob(f'{slide_id}.mrxs'))
 
@@ -184,7 +184,7 @@ def create_dcm_annotations(
     graphic_type: str,
     annotation_coordinate_type: str,
     output_dir: Path, 
-    ann_iteration: Union[str, None]=None
+    ann_session: Union[str, None]=None
     ) -> Dict[str, Any]:
 
     """
@@ -228,7 +228,7 @@ def create_dcm_annotations(
         matrix (SCOORD, default).
     output_dir: pathlib.Path
         A local output directory to store error logs.
-    ann_iteration: Union[str, None]
+    ann_session: Union[str, None]
         Annotation step in the annotation process. Only necessary for cell annotations. 
 
     Returns
@@ -266,7 +266,7 @@ def create_dcm_annotations(
                 cell_identifiers=data['cell_identifiers'],
                 roi_identifiers=data['roi_identifiers'],
                 labels=data['labels'],
-                ann_iteration=ann_iteration, 
+                ann_session=ann_session, 
                 series_uid=series_uid, 
                 sop_instance_number=sop_instance_number,
                 graphic_type=graphic_type,
@@ -306,7 +306,7 @@ def create_dcm_annotations(
 def save_annotations(
     data: dict[str, Any],
     output_dir: Path, 
-    ann_iteration: Union[int, str] = None
+    ann_session: Union[int, str] = None
     ) -> None: 
 
     """
@@ -324,7 +324,7 @@ def save_annotations(
 
     output_dir: pathlib.Path
         A local output directory to store the downloaded files and error logs. 
-    ann_iteration: Union[int, str, None]
+    ann_session: Union[int, str, None]
         Annotation step in case of cell annotations. 
     """
     errors = []
@@ -340,10 +340,10 @@ def save_annotations(
         if data['ann_type'] == 'roi': 
             ann_path = f'{slide_ann_dir}/{slide_id}_rois.dcm'
         else: 
-            # Increase ann_iteration to be 1-indexed instead of 0-indexed in the output files 
-            if isinstance(ann_iteration, int): 
-                ann_iteration += 1
-            ann_path = f'{slide_ann_dir}/{slide_id}_cells_ann_iteration_{ann_iteration}.dcm'
+            # Increase ann_session to be 1-indexed instead of 0-indexed in the output files 
+            if isinstance(ann_session, int): 
+                ann_session += 1
+            ann_path = f'{slide_ann_dir}/{slide_id}_cells_ann_session_{ann_session}.dcm'
         
         logging.info(f'Writing annotation to {str(ann_path)}.')
         data['ann_dcm'].save_as(ann_path)
@@ -413,31 +413,31 @@ def run(
         if len(slide_cells) > 0: 
             # Loop over all the different steps / consensus 
             
-            ann_iterations = list(range(slide_cells['ann_iterations'].max())) # zero-based
-            for ann_iteration in ann_iterations: 
-                slide_cells_this_ann_iteration = slide_cells[slide_cells['ann_iterations'] > ann_iteration]
-                data = parse_cell_annotations(image_data, slide_cells_this_ann_iteration, ann_iteration)
+            ann_sessions = list(range(slide_cells['ann_sessions'].max())) # zero-based
+            for ann_session in ann_sessions: 
+                slide_cells_this_ann_session = slide_cells[slide_cells['ann_sessions'] > ann_session]
+                data = parse_cell_annotations(image_data, slide_cells_this_ann_session, ann_session)
                 data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
                 data = create_dcm_annotations(data=data, 
-                                              series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_iteration created here
-                                              sop_instance_number=ann_iteration+1, 
+                                              series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_session created here
+                                              sop_instance_number=ann_session+1, 
                                               graphic_type=graphic_type, 
                                               annotation_coordinate_type=annotation_coordinate_type, 
                                               output_dir=output_dir, 
-                                              ann_iteration=ann_iteration)  
-                save_annotations(data, output_dir, ann_iteration)
+                                              ann_session=ann_session)  
+                save_annotations(data, output_dir, ann_session)
         
             # Also encode the final consensus including those cells where no consensus could be found. 
-            data = parse_cell_annotations(image_data, slide_cells, ann_iteration='consensus')
+            data = parse_cell_annotations(image_data, slide_cells, ann_session='consensus')
             data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
             data = create_dcm_annotations(data=data, 
-                                          series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_iteration created here 
-                                          sop_instance_number=ann_iteration[-1]+1, 
+                                          series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_session created here 
+                                          sop_instance_number=ann_sessions[-1]+1, 
                                           graphic_type=graphic_type, 
                                           annotation_coordinate_type=annotation_coordinate_type, 
                                           output_dir=output_dir, 
-                                          ann_iteration=ann_iteration)
-            save_annotations(data, output_dir, ann_iteration='consensus')
+                                          ann_session=ann_session)
+            save_annotations(data, output_dir, ann_session='consensus')
 
 
 if __name__ == "__main__":

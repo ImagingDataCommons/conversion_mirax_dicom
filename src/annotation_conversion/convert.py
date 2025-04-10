@@ -194,7 +194,7 @@ def create_bulk_annotations_for_rois(
     group = hd.ann.AnnotationGroup(
         number=1,
         uid=hd.UID(),
-        label='monolayer', 
+        label='monolayer region of interest', 
         annotated_property_category=metadata_config.roi_labels['monolayer'][0], 
         annotated_property_type=metadata_config.roi_labels['monolayer'][1], 
         graphic_type=graphic_type,
@@ -233,7 +233,7 @@ def create_bulk_annotations_for_cells(
     cell_identifiers: list[int],
     roi_identifiers: list[int], 
     labels: list[str],
-    ann_iteration: str, 
+    ann_session: str, 
     series_uid: hd.UID, 
     sop_instance_number: int,
     graphic_type: str = 'RECTANGLE',
@@ -255,7 +255,7 @@ def create_bulk_annotations_for_cells(
         Identifier for each cell annotation indicating which ROI they are part of. 
     labels: list[str]
         Label for each annotation taken as is from input. 
-    ann_iteration: str 
+    ann_session: str 
         Identifier of the step in the annotation process.
     series_uid: hd.UID
         DICOM SeriesInstanceUID. Each annotation steps, consensus and ROIs go into a separate Series. 
@@ -313,7 +313,7 @@ def create_bulk_annotations_for_cells(
             group_number += 1
 
     annotations = hd.ann.MicroscopyBulkSimpleAnnotations(
-        series_description=metadata_config.series_description_cell_anns(ann_iteration),
+        series_description=metadata_config.series_description_cell_anns(ann_session),
         source_images=[source_image_metadata],
         annotation_coordinate_type=annotation_coordinate_type,
         annotation_groups=groups,
@@ -326,6 +326,6 @@ def create_bulk_annotations_for_cells(
         software_versions=metadata_config.software_versions,
         device_serial_number=metadata_config.device_serial_number,
     )
-    return annotations
 
-# TODO: add clinicaltrialseriesID
+    annotations.add(metadata_config.get_clinical_trial_series_id(str(ann_session))) # add indicator for annotation session 
+    return annotations
