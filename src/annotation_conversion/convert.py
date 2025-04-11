@@ -326,5 +326,8 @@ def create_bulk_annotations_for_cells(
         device_serial_number=metadata_config.device_serial_number,
     )
 
-    annotations.add(metadata_config.get_clinical_trial_series_id(str(ann_session))) # adding indicator for annotation session 
+    # adding indicator for annotation session
+    for elem in metadata_config.add_clinical_trial_series_id(str(ann_session)): 
+        annotations.add(elem) 
+
     return annotations

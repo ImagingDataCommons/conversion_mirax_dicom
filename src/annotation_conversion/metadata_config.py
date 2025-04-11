@@ -2,6 +2,7 @@ import pydicom
 import pydicom.dataelem 
 import highdicom as hd
 from pydicom.sr.coding import Code
+from typing import Tuple
 from git_utils import get_git_remote_url, get_git_commit_hash
 
 
@@ -15,13 +16,14 @@ algorithm_type = hd.ann.AnnotationGroupGenerationTypeValues.MANUAL
 
 
 # Metadata functions
-def series_description_cell_anns(ann_session: str) -> str: 
-    if ann_session == 'consensus': 
+def series_description_cell_anns(annotation_session: str) -> str: 
+    if annotation_session == 'consensus': 
         return f'Cell bounding boxes with consensus cell type labels'
-    return f'Cell bounding boxes with cell type labels; annotation session: {ann_session}'
+    return f'Cell bounding boxes with cell type labels; annotation session: {annotation_session}'
 
-def get_clinical_trial_series_id(annotation_session: str) -> pydicom.Dataset:
-    return pydicom.dataelem.DataElement(0x00120071, 'LO', annotation_session)
+def add_clinical_trial_series_id(annotation_session: str) -> Tuple[pydicom.dataelem.DataElement]:
+    return (pydicom.dataelem.DataElement(0x00120071, 'LO', annotation_session),
+    pydicom.dataelem.DataElement(0x00120060, 'LO', ''))
 
 
 # Labels 
