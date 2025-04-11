@@ -8,13 +8,13 @@ from typing import Any, Dict, List, Tuple, Union
 class CellAnnotation:
     cell_identifier: int
     roi_identifier: int 
-    bounding_box: tuple # xmin, ymin, xmax, ymax 
+    bounding_box: Tuple[int] # xmin, ymin, xmax, ymax 
     label: str
 
 @dataclass
 class ROIAnnotation: 
     identifier: int
-    bounding_box: tuple # xmin, ymin, xmax, ymax
+    bounding_box: Tuple[int] # xmin, ymin, xmax, ymax
 
 
 def preprocess_annotation_csvs(cell_csvs: List[Path], roi_csvs: List[Path]) -> Tuple[pd.DataFrame]: 

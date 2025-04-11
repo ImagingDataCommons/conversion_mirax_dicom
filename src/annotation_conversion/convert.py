@@ -4,7 +4,6 @@ import openslide
 import numpy as np
 import highdicom as hd
 from pathlib import Path
-from wsidicomizer import WsiDicomizer
 from pydicom import Dataset
 from pydicom.sr.codedict import codes
 from typing import List, Tuple, Union
@@ -194,9 +193,9 @@ def create_bulk_annotations_for_rois(
     group = hd.ann.AnnotationGroup(
         number=1,
         uid=hd.UID(),
-        label='monolayer region of interest', 
-        annotated_property_category=metadata_config.roi_labels['monolayer'][0], 
-        annotated_property_type=metadata_config.roi_labels['monolayer'][1], 
+        label='region_of_interest', 
+        annotated_property_category=metadata_config.roi_labels['region_of_interest'][0], 
+        annotated_property_type=metadata_config.roi_labels['region_of_interest'][1], 
         graphic_type=graphic_type,
         graphic_data=graphic_data,
         algorithm_type=metadata_config.algorithm_type,
@@ -297,7 +296,7 @@ def create_bulk_annotations_for_cells(
                 algorithm_type=metadata_config.algorithm_type,
                 measurements=[
                     hd.ann.Measurements(
-                        name=codes.DCM.Identifier,
+                        name=codes.DCM.Identifier, # TODO: turn into private code Cell identifier
                         unit=codes.UCUM.NoUnits,
                         values=np.array([cell_identifiers[i] for i in indices]),
                     ), 
@@ -327,5 +326,5 @@ def create_bulk_annotations_for_cells(
         device_serial_number=metadata_config.device_serial_number,
     )
 
-    annotations.add(metadata_config.get_clinical_trial_series_id(str(ann_session))) # add indicator for annotation session 
+    annotations.add(metadata_config.get_clinical_trial_series_id(str(ann_session))) # adding indicator for annotation session 
     return annotations

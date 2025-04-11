@@ -31,7 +31,7 @@ code_morphologic_abnormality = Code('49755003', 'SCT', 'Morphologically abnormal
 code_spatial_relational_concept = Code('309825002', 'SCT', 'Spatial and relational concepts')
 
 roi_labels = {
-    'monolayer': [code_spatial_relational_concept, Code('111099', 'DCM', 'Selected region')],
+    'region_of_interest': [code_spatial_relational_concept, Code('111099', 'DCM', 'Selected region')],
 }
 
 cell_labels = {
