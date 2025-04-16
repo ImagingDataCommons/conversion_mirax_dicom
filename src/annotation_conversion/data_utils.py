@@ -28,13 +28,13 @@ def preprocess_annotation_csvs(cell_csvs: List[Path], roi_csvs: List[Path]) -> T
         # If original_consensus_label column is present, those values that are empty, indicate that no consensus could be found.
         if 'original_consensus_label' in df_c.columns: 
             df_c['original_consensus_label'] = df_c['original_consensus_label'].fillna('no_consensus_found')
-            df_c['roi_id'] = 1 # TODO: to be removed  
+        
         # If no original_consensus_label column is present, we are dealing with the detection dataset and all cells get the label 'haematological_structure'
         else:
             df_c['all_original_annotations'] = '' 
             df_c['original_consensus_label'] = 'haematological_structure'       
-            df_c['roi_id'] = 1 # TODO: to be removed  
         cells_dfs.append(df_c)
+        print(df_c[df_c['original_consensus_label'] == 'no_consensus_found'])
     
     cells = pd.concat(cells_dfs, axis=0, ignore_index=True)
     cells = _rename_cell_labels(cells)
