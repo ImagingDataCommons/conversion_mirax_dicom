@@ -4,7 +4,7 @@ import json
 import pandas as pd 
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Tuple, Union
+from typing import Dict, Union
 
 from wsidicom.conceptcode import (
     AnatomicPathologySpecimenTypesCode,

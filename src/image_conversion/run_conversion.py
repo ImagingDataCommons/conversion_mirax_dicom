@@ -9,7 +9,7 @@ from multiprocessing import Process
 from typing import Dict, List
 
 from convert import wsidicomizer_convert
-from conversion_mirax_dicom.src.image_conversion.metadata_config import read_nci_thesaurus, find_property_by_suffix, build_metadata, build_additional_metadata
+from metadata_config import read_nci_thesaurus, find_property_by_suffix, build_metadata, build_additional_metadata
 
 
 def copy_mrxs_from_gaia(gaia_mrxs_path: Path, local_mrxs_path: Path) -> None:
