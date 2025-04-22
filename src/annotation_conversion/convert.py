@@ -282,9 +282,10 @@ def create_bulk_annotations_for_cells(
 
     groups = []
     group_number = 1
-    for label in sorted(metadata_config.cell_labels): 
-        indices = np.where(np.array(labels) == label)[0].tolist()
-        if len(indices) > 0: 
+    for label in sorted(metadata_config.cell_labels):
+        # Encode cells which are within a ROI
+        indices_in_roi = np.where((np.array(labels) == label) & (np.array(roi_identifiers) != -1))[0].tolist()
+        if len(indices_in_roi) > 0: 
             group = hd.ann.AnnotationGroup(
                 number=group_number,
                 uid=hd.UID(),
@@ -292,22 +293,44 @@ def create_bulk_annotations_for_cells(
                 annotated_property_category=metadata_config.cell_labels[label][0],
                 annotated_property_type=metadata_config.cell_labels[label][1],
                 graphic_type=graphic_type,
-                graphic_data=[graphic_data[i] for i in indices],
+                graphic_data=[graphic_data[i] for i in indices_in_roi],
                 algorithm_type=metadata_config.algorithm_type,
                 measurements=[
                     hd.ann.Measurements(
                         name=codes.DCM.Identifier, # TODO: turn into private code Cell identifier
                         unit=codes.UCUM.NoUnits,
-                        values=np.array([cell_identifiers[i] for i in indices]),
+                        values=np.array([cell_identifiers[i] for i in indices_in_roi]),
                     ), 
                     hd.ann.Measurements(
                         name=codes.DCM.ReferencedRegionOfInterestIdentifier,
                         unit=codes.UCUM.NoUnits,
-                        values=np.array([roi_identifiers[i] for i in indices]),
+                        values=np.array([roi_identifiers[i] for i in indices_in_roi]),
                     )
                 ],
             )
+            groups.append(group)
+            group_number += 1
 
+        # Encode cells which are outside of a ROI
+        indices_out_of_roi = np.where((np.array(labels) == label) & (np.array(roi_identifiers) == -1))[0].tolist()
+        if len(indices_out_of_roi) > 0: 
+            group = hd.ann.AnnotationGroup(
+                number=group_number,
+                uid=hd.UID(),
+                label=label,
+                annotated_property_category=metadata_config.cell_labels[label][0],
+                annotated_property_type=metadata_config.cell_labels[label][1],
+                graphic_type=graphic_type,
+                graphic_data=[graphic_data[i] for i in indices_out_of_roi],
+                algorithm_type=metadata_config.algorithm_type,
+                measurements=[
+                    hd.ann.Measurements(
+                        name=codes.DCM.Identifier, # TODO: turn into private code Cell identifier
+                        unit=codes.UCUM.NoUnits,
+                        values=np.array([cell_identifiers[i] for i in indices_out_of_roi]),
+                    ),
+                ],
+            )
             groups.append(group)
             group_number += 1
 
