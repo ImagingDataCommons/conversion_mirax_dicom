@@ -70,7 +70,7 @@ def get_mrxs_image_path(mrxs_image_root: Path, slide_id: str) -> Path:
     Returns
     -------
     mrxs_image_path: Path
-        Full path to the respective MRXS file or a Stopsession error. . 
+        Full path to the respective MRXS file or a StopIteration error. 
     """
     return next(mrxs_image_root.rglob(f'{slide_id}.mrxs'))
 
