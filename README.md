@@ -2,8 +2,9 @@
 Code for BMDeep dataset conversion from MRXS to DICOM. 
 
 This repository includes:  
-1) code for image conversion to be run on a local machine, while retrieving actual data and returning converted results from/to a mounted server called Gaia.
-2) code for annotation conversion
+1) code for image conversion 
+2) code for annotation conversion 
+Both are implemented to be run on a local machine, while retrieving actual data and returning converted results from/to a mounted server called Gaia.
 
 ## Requirements
 - see requirements.txt 
@@ -16,7 +17,3 @@ This repository includes:
 
 ## Documentation
 - see [BMDeep Conversion notes](https://docs.google.com/document/d/1yobF48SQlx4rMwwsj-T324Nfu25PJt5CFDlQB9E1Z-8/edit?tab=t.0)
-- see PW42 Project Page: [Conversion of bone marrow smear dataset from MIRAX format into DICOM](https://projectweek.na-mic.org/PW42_2025_GranCanaria/Projects/ConversionOfBoneMarrowSmearDatasetFromMiraxFormatIntoDicom/)
-
-### Open TODOs
-- improve loggin in annotation conversion 
