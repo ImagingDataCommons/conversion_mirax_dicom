@@ -2,6 +2,7 @@ import pydicom
 import pydicom.dataelem 
 import highdicom as hd
 from pydicom.sr.coding import Code
+from pydicom.sr.codedict import codes
 from typing import Tuple
 from git_utils import get_git_remote_url, get_git_commit_hash
 
@@ -26,7 +27,7 @@ def add_clinical_trial_series_id(annotation_session: str) -> Tuple[pydicom.datae
     pydicom.dataelem.DataElement(0x00120060, 'LO', ''))
 
 
-# Labels 
+# Ontology codes 
 code_physical_object = Code('260787004', 'SCT', 'Physical object')
 code_anatomical_structure = Code('91723000', 'SCT', 'Anatomical structure')
 code_morphologic_abnormality = Code('49755003', 'SCT', 'Morphologically abnormal structure')
@@ -89,3 +90,8 @@ cell_labels = {
     'no_consensus_found': [code_anatomical_structure, Code('414387006', 'SCT', 'Structure of haematological system')],
     'heamatological_structure': [code_anatomical_structure, Code('414387006', 'SCT', 'Structure of haematological system')]
 }
+
+code_cell_identifier = Code('0010197', 'EFO', 'single cell identifier')
+code_roi_identifier = codes.DCM.Identifier
+code_ref_to_roi_identifier = codes.DCM.ReferencedRegionOfInterestIdentifier
+unit_identifier = codes.UCUM.NoUnits
