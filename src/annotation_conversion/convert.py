@@ -5,7 +5,6 @@ import numpy as np
 import highdicom as hd
 from pathlib import Path
 from pydicom import Dataset
-from pydicom.sr.codedict import codes
 from typing import List, Tuple, Union
 
 import metadata_config
@@ -201,8 +200,8 @@ def create_bulk_annotations_for_rois(
         algorithm_type=metadata_config.algorithm_type,
         measurements=[
             hd.ann.Measurements(
-                name=codes.DCM.ReferencedRegionOfInterestIdentifier,
-                unit=codes.UCUM.NoUnits,
+                name=metadata_config.code_roi_identifier,
+                unit=metadata_config.unit_identifier,
                 values=np.array(identifiers),
             )
         ],
@@ -297,13 +296,13 @@ def create_bulk_annotations_for_cells(
                 algorithm_type=metadata_config.algorithm_type,
                 measurements=[
                     hd.ann.Measurements(
-                        name=codes.DCM.Identifier, # TODO: turn into private code Cell identifier
-                        unit=codes.UCUM.NoUnits,
+                        name=metadata_config.code_cell_identifier, 
+                        unit=metadata_config.unit_identifier,
                         values=np.array([cell_identifiers[i] for i in indices_in_roi]),
                     ), 
                     hd.ann.Measurements(
-                        name=codes.DCM.ReferencedRegionOfInterestIdentifier,
-                        unit=codes.UCUM.NoUnits,
+                        name=metadata_config.code_ref_to_roi_identifier,
+                        unit=metadata_config.unit_identifier,
                         values=np.array([roi_identifiers[i] for i in indices_in_roi]),
                     )
                 ],
@@ -325,8 +324,8 @@ def create_bulk_annotations_for_cells(
                 algorithm_type=metadata_config.algorithm_type,
                 measurements=[
                     hd.ann.Measurements(
-                        name=codes.DCM.Identifier, # TODO: turn into private code Cell identifier
-                        unit=codes.UCUM.NoUnits,
+                        name=metadata_config.code_cell_identifier, 
+                        unit=metadata_config.unit_identifier,
                         values=np.array([cell_identifiers[i] for i in indices_out_of_roi]),
                     ),
                 ],
