@@ -61,7 +61,6 @@ def _rename_cell_labels(cells: pd.DataFrame) -> pd.DataFrame:
         'other:Mikrogerinsel': 'thrombocyte_aggregate', 
         'other:Plasma eines Megakaryozyten': 'damaged_cell', 
         'other:Makrothrombozyt': 'giant_platelet', 
-        'other:Granula der kaputten Zelle': 'damaged_cell', 
         'other:Kernreste': 'damaged_cell', 
         'annotation_error': 'technically_unfit' 
     }
