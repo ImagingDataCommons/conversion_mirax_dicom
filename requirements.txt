@@ -20,8 +20,6 @@ fsspec==2024.10.0
 gitdb==4.0.12
 GitPython==3.1.44
 highdicom==0.25.0
-idc-index==0.8.1
-idc-index-data==20.0.1
 idna==3.10
 imagecodecs==2024.12.30
 imagesize==1.4.1
