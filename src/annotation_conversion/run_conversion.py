@@ -436,7 +436,7 @@ def run(
                                           graphic_type=graphic_type, 
                                           annotation_coordinate_type=annotation_coordinate_type, 
                                           output_dir=output_dir, 
-                                          ann_session=ann_session)
+                                          ann_session='consensus')
             save_annotations(data, output_dir, ann_session='consensus')
 
 
