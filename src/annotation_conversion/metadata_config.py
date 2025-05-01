@@ -92,6 +92,6 @@ cell_labels = {
 }
 
 code_cell_identifier = Code('0010197', 'EFO', 'single cell identifier')
-code_roi_identifier = codes.DCM.Identifier
+code_roi_identifier = Code('111030', 'DCM', 'Image Region')
 code_ref_to_roi_identifier = codes.DCM.ReferencedRegionOfInterestIdentifier
 unit_identifier = codes.UCUM.NoUnits
