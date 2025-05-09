@@ -20,6 +20,8 @@ fsspec==2024.10.0
 gitdb==4.0.12
 GitPython==3.1.44
 highdicom==0.25.0
+idc-index==0.8.1
+idc-index-data==20.0.1
 idna==3.10
 imagecodecs==2024.12.30
 imagesize==1.4.1
@@ -37,7 +39,7 @@ numcodecs==0.13.1
 numpy==2.2.2
 ome-types==0.5.3
 openslide-python==1.4.1
-opentile==0.16.0
+opentile==0.17.0
 packaging==24.2
 pandas==2.2.3
 parso==0.8.4
@@ -85,7 +87,7 @@ tzdata==2024.2
 universal_pathlib==0.2.6
 urllib3==2.2.3
 wcwidth==0.2.13
-wsidicom==0.26.0
-wsidicomizer==0.20.0
+wsidicom==0.27.0
+wsidicomizer==0.21.0
 xsdata==24.3.1
 zarr==2.18.4
