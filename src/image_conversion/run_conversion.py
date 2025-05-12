@@ -58,17 +58,32 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
 
     # Conversion loop
     for gaia_mrxs_file in sorted(args.gaia_work_dir.rglob('*_bm.mrxs')): 
+        slide_id = gaia_mrxs_file.stem
+        patient_id = slide_id.split('_')[0]
+        
         # Check if already converted
         if os.path.exists(gaia_results_dir.joinpath(gaia_mrxs_file.name).with_suffix('')):
             with open(log_file, 'a') as log: 
                 log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - Already converted {gaia_mrxs_file}. Continuing.\n')
             continue
         
+        # Only convert if clinical data available
+        if patient_id not in clinical_metadata.index.to_list():
+            with open(log_file, 'a') as log: 
+                log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - No clinical metadata available for {gaia_mrxs_file}. Continuing.\n')
+            continue
+
+        # Ignore duplicates that reside in "Validation Set" folder
+        if 'Validation' in str(gaia_mrxs_file): 
+            continue
+        # Don't convert 42A0E188F5033BC65BF8D78622277C4E_1_bm.mrxs, insted 42A0E188F5033BC65BF8D78622277C4E_3_bm.mrxs
+        if slide_id == '42A0E188F5033BC65BF8D78622277C4E_1_bm': 
+            continue
+        
         local_mrxs_file = local_input.joinpath(gaia_mrxs_file.name)
         copy_mrxs_from_gaia(gaia_mrxs_file, local_mrxs_file)
 
-        slide_id = gaia_mrxs_file.stem
-        patient_id = slide_id.split('_')[0]
+        
         mrxs_properties = get_mrxs_slide_properties(local_mrxs_file)
         mrxs_properties.pop('mirax.GENERAL.SLIDE_ID') # might carry security risk, thus remove 
 
