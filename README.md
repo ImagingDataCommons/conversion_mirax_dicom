@@ -1,7 +1,7 @@
 # BoneMarrowWSI-PediatricLeukemia dataset conversion
 **--- This repository is still work in progress ---**
 
-This repository contains the code that was used for the conversion of the BoneMarrowWSI-PediatricLeukemia (aka BMDeep) dataset into DICOM format for ingestion into IDC. 
+This repository contains the code that was used for the conversion of the [BoneMarrowWSI-PediatricLeukemia](https://doi.org/10.5281/zenodo.14933088) (aka BMDeep) dataset into DICOM format for ingestion into IDC. 
 
 This repository includes:  
 1) code for image conversion from MRXS to DICOM.
