@@ -33,7 +33,7 @@ from wsidicomizer.metadata import WsiDicomizerMetadata
 def read_nci_thesaurus(path: Path) -> Dict[str, str]: 
     df = pd.read_csv(path, sep=';', encoding="ISO-8859-1")
     ncit = df.set_index('Code')['Preferred Term'].to_dict()
-    ncit['C3182'] = 'Acute Promyelocytic Leukemia with t(15;17)(q24.1;q21.2); PML-RARA' # manual adding of only code that is missing
+    ncit['C3182'] = 'Acute Promyelocytic Leukemia with t(15;17)(q24.1;q21.2);PML-RARA' # manual adding of only code that is missing
     return ncit
 
 
