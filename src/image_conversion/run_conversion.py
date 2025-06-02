@@ -2,6 +2,7 @@ import os
 import argparse 
 import shutil
 import openslide
+import numpy as np 
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
@@ -87,6 +88,8 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
         mrxs_properties = get_mrxs_slide_properties(local_mrxs_file)
         mrxs_properties.pop('mirax.GENERAL.SLIDE_ID') # might carry security risk, thus remove 
 
+        print(patient_id)
+        print(clinical_metadata.loc[patient_id]['ncit_concept_code'])
         # Build metadata to be supplied to wsidicomizer 
         slide_metadata = build_metadata(slide_id=slide_id, 
                                         patient_id=patient_id, 
@@ -96,14 +99,15 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
         # Build additional metadata that will be added outside of wsidicom's metadata scheme, but within the convert function
         # See issue: https://github.com/imi-bigpicture/wsidicomizer/issues/124
         aquisition_duration = float(find_property_by_suffix(mrxs_properties, 'scanning_time_in_sec'))
+        primary_diagnoses_code = clinical_metadata.loc[patient_id]['ncit_concept_code']
         additional_metadata = build_additional_metadata(
             study_description='Bone marrow aspirate smear, pediatric leukemia', 
             image_series_description='Bone marrow aspirate smear, May-Gruenwald-Giemsa stain',
             patient_id=patient_id,
             patient_age=clinical_metadata.loc[patient_id]['age'], 
             aquisition_duration=aquisition_duration, 
-            primary_diagnoses_code=clinical_metadata.loc[patient_id]['ncit_concept_code'],
-            primary_diagnoses_code_meaning=nci_thesaurus[clinical_metadata.loc[patient_id]['ncit_concept_code']],  
+            primary_diagnoses_code=primary_diagnoses_code,
+            primary_diagnoses_code_meaning=nci_thesaurus.get(primary_diagnoses_code, np.nan),  
             clinical_trial_coord_center='University Hospital Erlangen', 
             clinical_trial_protocol_name='BoneMarrowWSI-PediatricLeukemia', 
             clinical_trial_sponsor='Uni Hospital Erlangen, Fraunhofer MEVIS, Uni Erlangen-Nuremberg', 
@@ -138,5 +142,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     run(args.local_work_dir, args.gaia_work_dir, args.metadata)
-    
-    

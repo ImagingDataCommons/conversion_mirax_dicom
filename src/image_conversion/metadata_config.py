@@ -135,7 +135,7 @@ def build_additional_metadata(
     ds.add_new([0x0012, 0x0020], 'LO', clinical_trial_protocol_name)
     ds.add_new([0x0012, 0x0010], 'LO', clinical_trial_sponsor)
 
-    if isinstance(primary_diagnoses_code, str): # if not float, i.e., nan 
+    if isinstance(primary_diagnoses_code, str) and isinstance(primary_diagnoses_code_meaning, str): # if not float, i.e., nan 
         ds.add_new([0x0008, 0x1080], 'LO', primary_diagnoses_code_meaning) # add AdmittingDiagnosesDescription
         ds.add_new([0x0008, 0x1084], 'SQ', [pydicom.Dataset()]) # add AdmittingDiagnosesCodeSequence
         ds.AdmittingDiagnosesCodeSequence[0].add_new([0x0008, 0x0100], 'SH', primary_diagnoses_code) # CodeValue
