@@ -129,8 +129,8 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
             log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - Successfully converted {gaia_mrxs_file}\n')
 
     # Remove empty folders created for conversion 
-    os.rmdir(local_input)
-    os.rmdir(local_output)
+    shutil.rmtree(local_input)
+    shutil.rmtree(local_output)
 
 
 
