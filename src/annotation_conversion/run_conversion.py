@@ -8,6 +8,7 @@ import argparse
 import pandas as pd
 import highdicom as hd
 from pathlib import Path
+from tqdm import tqdm
 from time import time
 from typing import Any, Dict, Union  
 
@@ -46,7 +47,7 @@ def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]:
                 largest_size = level_size
                 base_level = level
         return base_level
-
+    
     base_level = find_base_level(slide_dir)
     ds = pydicom.dcmread(base_level, stop_before_pixels=True)
     data = dict( 
@@ -138,7 +139,7 @@ def parse_annotations_to_graphic_data(
     slide_id = data['slide_id']
 
     start_time = time()
-    logging.info(f'Parsing annotations for slide: {slide_id}')
+    #logging.info(f'Parsing annotations for slide: {slide_id}')
     try:
         graphic_data = get_graphic_data(
             annotations=data['ann'],
@@ -162,9 +163,9 @@ def parse_annotations_to_graphic_data(
 
     stop_time = time()
     duration = stop_time - start_time
-    logging.info(
-        f'Processed annotations for slide {slide_id} in {duration:.2f}s'
-    )
+    #logging.info(
+    #    f'Processed annotations for slide {slide_id} in {duration:.2f}s'
+    #)
     
     data['graphic_data'] = graphic_data
     if isinstance(data['ann'][0], ROIAnnotation): 
@@ -246,7 +247,7 @@ def create_dcm_annotations(
     errors = []
     slide_id = data['slide_id']
     start_time = time()
-    logging.info(f'Creating annotation for slide: {slide_id}')
+    #logging.info(f'Creating annotation for slide: {slide_id}')
 
     try:
         if data['ann_type'] == 'roi':
@@ -287,9 +288,9 @@ def create_dcm_annotations(
 
     stop_time = time()
     duration = stop_time - start_time
-    logging.info(
-        f'Created annotation for for slide {slide_id} in {duration:.2f}s'
-    )
+    #logging.info(
+    #    f'Created annotation for for slide {slide_id} in {duration:.2f}s'
+    #)
 
     data['ann_dcm'] = ann_dcm
     if data['ann_type'] == 'roi': 
@@ -331,7 +332,7 @@ def save_annotations(
     slide_id = data['slide_id']
     
     image_start_time = time()
-    logging.info(f'Saving annotations for slide {slide_id}')
+    #logging.info(f'Saving annotations for slide {slide_id}')
     
     slide_ann_dir = output_dir / slide_id
     slide_ann_dir.mkdir(exist_ok=True)
@@ -345,14 +346,14 @@ def save_annotations(
                 ann_session += 1
             ann_path = f'{slide_ann_dir}/{slide_id}_cells_ann_session_{ann_session}.dcm'
         
-        logging.info(f'Writing annotation to {str(ann_path)}.')
+        #logging.info(f'Writing annotation to {str(ann_path)}.')
         data['ann_dcm'].save_as(ann_path)
 
         image_stop_time = time()
         time_for_image = image_stop_time - image_start_time
-        logging.info(
-            f'Saved annotations for slide {slide_id} in {time_for_image:.2f}s'
-        )
+        #logging.info(
+        #    f'Saved annotations for slide {slide_id} in {time_for_image:.2f}s'
+        #)
         
     except Exception as e:
         logging.error(f"Error {str(e)}")
@@ -390,7 +391,7 @@ def run(
     cells, rois = preprocess_annotation_csvs(csv_cells, csv_rois)
 
     slide_ids = [item for item in os.listdir(source_image_root_dir) if os.path.isdir(source_image_root_dir/item)]
-    for slide_id in slide_ids:
+    for slide_id in tqdm(slide_ids):
         image_data = get_source_image_metadata(source_image_root_dir/slide_id)
         image_data['mrxs_source_image_path'] = get_mrxs_image_path(mrxs_image_root, slide_id)
 
