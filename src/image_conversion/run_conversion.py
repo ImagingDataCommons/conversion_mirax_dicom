@@ -59,7 +59,7 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
     nci_thesaurus = read_nci_thesaurus(Path(__file__).with_name('NCIt_Neoplasm_Core_Terminology.csv'))
 
     # Conversion loop
-    for gaia_mrxs_file in tqdm(sorted(args.gaia_work_dir.rglob('*.mrxs'))): 
+    for gaia_mrxs_file in tqdm(sorted(args.gaia_work_dir.rglob('*_bm.mrxs'))): 
         slide_id = gaia_mrxs_file.stem
         patient_id = slide_id.split('_')[0]
         
@@ -71,18 +71,15 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
         
         # Only convert if clinical data available
         if patient_id not in clinical_metadata.index.to_list():
-            print('not',patient_id)
             with open(log_file, 'a') as log: 
                 log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - No clinical metadata available for {gaia_mrxs_file}. Continuing.\n')
             continue
 
         # Ignore duplicates that reside in "Validation Set" folder
         if 'Validation' in str(gaia_mrxs_file): 
-            print('val',patient_id)
             continue
         # Don't convert 42A0E188F5033BC65BF8D78622277C4E_1_bm.mrxs, insted 42A0E188F5033BC65BF8D78622277C4E_3_bm.mrxs
         if slide_id == '42A0E188F5033BC65BF8D78622277C4E_1_bm': 
-            print('f', slide_id)
             continue  
 
         local_mrxs_file = local_input.joinpath(gaia_mrxs_file.name)
