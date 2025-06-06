@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
+from tqdm import tqdm
 from multiprocessing import Process
 from typing import Dict, List
 
@@ -58,7 +59,7 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
     nci_thesaurus = read_nci_thesaurus(Path(__file__).with_name('NCIt_Neoplasm_Core_Terminology.csv'))
 
     # Conversion loop
-    for gaia_mrxs_file in sorted(args.gaia_work_dir.rglob('*_bm.mrxs')): 
+    for gaia_mrxs_file in tqdm(sorted(args.gaia_work_dir.rglob('*.mrxs'))): 
         slide_id = gaia_mrxs_file.stem
         patient_id = slide_id.split('_')[0]
         
@@ -66,30 +67,30 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
         if os.path.exists(gaia_results_dir.joinpath(gaia_mrxs_file.name).with_suffix('')):
             with open(log_file, 'a') as log: 
                 log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - Already converted {gaia_mrxs_file}. Continuing.\n')
-            continue
+            continue   
         
         # Only convert if clinical data available
         if patient_id not in clinical_metadata.index.to_list():
+            print('not',patient_id)
             with open(log_file, 'a') as log: 
                 log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - No clinical metadata available for {gaia_mrxs_file}. Continuing.\n')
             continue
 
         # Ignore duplicates that reside in "Validation Set" folder
         if 'Validation' in str(gaia_mrxs_file): 
+            print('val',patient_id)
             continue
         # Don't convert 42A0E188F5033BC65BF8D78622277C4E_1_bm.mrxs, insted 42A0E188F5033BC65BF8D78622277C4E_3_bm.mrxs
         if slide_id == '42A0E188F5033BC65BF8D78622277C4E_1_bm': 
-            continue
-        
+            print('f', slide_id)
+            continue  
+
         local_mrxs_file = local_input.joinpath(gaia_mrxs_file.name)
         copy_mrxs_from_gaia(gaia_mrxs_file, local_mrxs_file)
-
         
         mrxs_properties = get_mrxs_slide_properties(local_mrxs_file)
         mrxs_properties.pop('mirax.GENERAL.SLIDE_ID') # might carry security risk, thus remove 
 
-        print(patient_id)
-        print(clinical_metadata.loc[patient_id]['ncit_concept_code'])
         # Build metadata to be supplied to wsidicomizer 
         slide_metadata = build_metadata(slide_id=slide_id, 
                                         patient_id=patient_id, 
