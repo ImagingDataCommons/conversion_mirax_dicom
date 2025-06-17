@@ -139,7 +139,7 @@ def parse_annotations_to_graphic_data(
     slide_id = data['slide_id']
 
     start_time = time()
-    #logging.info(f'Parsing annotations for slide: {slide_id}')
+    logging.info(f'Parsing annotations for slide: {slide_id}')
     try:
         graphic_data = get_graphic_data(
             annotations=data['ann'],
@@ -334,17 +334,16 @@ def save_annotations(
     image_start_time = time()
     #logging.info(f'Saving annotations for slide {slide_id}')
     
-    slide_ann_dir = output_dir / slide_id
-    slide_ann_dir.mkdir(exist_ok=True)
+    slide_dir = output_dir / slide_id
 
     try:
         if data['ann_type'] == 'roi': 
-            ann_path = f'{slide_ann_dir}/{slide_id}_rois.dcm'
+            ann_path = f'{slide_dir}/{slide_id}_rois.dcm'
         else: 
             # Increase ann_session to be 1-indexed instead of 0-indexed in the output files 
             if isinstance(ann_session, int): 
                 ann_session += 1
-            ann_path = f'{slide_ann_dir}/{slide_id}_cells_ann_session_{ann_session}.dcm'
+            ann_path = f'{slide_dir}/{slide_id}_cells_ann_session_{ann_session}.dcm'
         
         #logging.info(f'Writing annotation to {str(ann_path)}.')
         data['ann_dcm'].save_as(ann_path)
@@ -392,6 +391,7 @@ def run(
 
     slide_ids = [item for item in os.listdir(source_image_root_dir) if os.path.isdir(source_image_root_dir/item)]
     for slide_id in tqdm(slide_ids):
+        print(slide_id)
         image_data = get_source_image_metadata(source_image_root_dir/slide_id)
         image_data['mrxs_source_image_path'] = get_mrxs_image_path(mrxs_image_root, slide_id)
 
