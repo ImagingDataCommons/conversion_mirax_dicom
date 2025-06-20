@@ -88,7 +88,7 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
         stainings=[
             Staining(
                 substances=[
-                    SpecimenStainsCode('may-Grunwald giemsa stain'), # 255803006, SCT
+                    SpecimenStainsCode('May-Grunwald giemsa stain'), # 255803006, SCT
                 ]
             )
         ],

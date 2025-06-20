@@ -68,18 +68,18 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
             with open(log_file, 'a') as log: 
                 log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - Already converted {gaia_mrxs_file}. Continuing.\n')
             continue    
+        # Ignore duplicates that reside in "Validation Set" folder
+        if 'Validation' in str(gaia_mrxs_file): 
+            continue
         # Only convert if clinical data available
         if patient_id not in clinical_metadata.index.to_list():
             with open(log_file, 'a') as log: 
                 log.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} - No clinical metadata available for {gaia_mrxs_file}. Continuing.\n')
             continue
-        # Ignore duplicates that reside in "Validation Set" folder
-        if 'Validation' in str(gaia_mrxs_file): 
-            continue
+        
         # Don't convert 42A0E188F5033BC65BF8D78622277C4E_1_bm.mrxs, insted 42A0E188F5033BC65BF8D78622277C4E_3_bm.mrxs
         if slide_id == '42A0E188F5033BC65BF8D78622277C4E_1_bm': 
             continue  
-
         local_mrxs_file = local_input.joinpath(gaia_mrxs_file.name)
         copy_mrxs_from_gaia(gaia_mrxs_file, local_mrxs_file)
         
