@@ -16,7 +16,7 @@ from data_utils import ROIAnnotation, preprocess_annotation_csvs, filter_slide_a
 from convert import get_graphic_data, create_bulk_annotations_for_rois, create_bulk_annotations_for_cells
 
 
-def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]: 
+def get_source_image_metadata(slide_dir: Path, output_dir:Path) -> Dict[str, Any]: 
     """ 
     Function that finds the source image file (base level) and extracts relevant metadata. 
     
@@ -35,6 +35,8 @@ def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]:
         - mrxs_image: Path 
             Path to respective MRXS file before conversion into DICOM. 
             Needed to extract amount of cropping that happened during conversion. 
+    output_dir: pathlib.Path
+        A local output directory to store error logs.
     """
 
     def find_base_level(dcm_dir: Path) -> Path:
@@ -48,13 +50,29 @@ def get_source_image_metadata(slide_dir: Path) -> Dict[str, Any]:
                 base_level = level
         return base_level
     
-    base_level = find_base_level(slide_dir)
-    ds = pydicom.dcmread(base_level, stop_before_pixels=True)
-    data = dict( 
-        slide_id = slide_dir.stem, 
-        source_image = ds
-    )
-    return data 
+    errors = []
+
+    try: 
+        base_level = find_base_level(slide_dir)
+        ds = pydicom.dcmread(base_level, stop_before_pixels=True)
+        data = dict( 
+            slide_id = slide_dir.stem, 
+            source_image = ds
+        )
+        return data 
+    
+    except Exception as e:
+        logging.error(f'Error {str(e)}')
+        errors.append(
+            {
+                'slide_id': slide_dir.stem,
+                'error_message': str(e),
+                'datetime': str(datetime.datetime.now()),
+            }
+        )
+        errors_df = pd.DataFrame(errors)
+        errors_df.to_csv(output_dir / 'conversion_error_log.txt')
+        return None 
 
 
 def get_mrxs_image_path(mrxs_image_root: Path, slide_id: str) -> Path: 
@@ -137,8 +155,6 @@ def parse_annotations_to_graphic_data(
 
     errors = []
     slide_id = data['slide_id']
-
-    start_time = time()
     logging.info(f'Parsing annotations for slide: {slide_id}')
     try:
         graphic_data = get_graphic_data(
@@ -159,13 +175,7 @@ def parse_annotations_to_graphic_data(
         )
         errors_df = pd.DataFrame(errors)
         errors_df.to_csv(output_dir / 'conversion_error_log.txt')
-        return None
-
-    stop_time = time()
-    duration = stop_time - start_time
-    #logging.info(
-    #    f'Processed annotations for slide {slide_id} in {duration:.2f}s'
-    #)
+        return None 
     
     data['graphic_data'] = graphic_data
     if isinstance(data['ann'][0], ROIAnnotation): 
@@ -246,8 +256,6 @@ def create_dcm_annotations(
 
     errors = []
     slide_id = data['slide_id']
-    start_time = time()
-    #logging.info(f'Creating annotation for slide: {slide_id}')
 
     try:
         if data['ann_type'] == 'roi':
@@ -286,12 +294,6 @@ def create_dcm_annotations(
         errors_df.to_csv(output_dir / 'annotation_creator_error_log.txt')
         return None
 
-    stop_time = time()
-    duration = stop_time - start_time
-    #logging.info(
-    #    f'Created annotation for for slide {slide_id} in {duration:.2f}s'
-    #)
-
     data['ann_dcm'] = ann_dcm
     if data['ann_type'] == 'roi': 
         del data['identifiers']
@@ -329,11 +331,7 @@ def save_annotations(
         Annotation step in case of cell annotations. 
     """
     errors = []
-    slide_id = data['slide_id']
-    
-    image_start_time = time()
-    #logging.info(f'Saving annotations for slide {slide_id}')
-    
+    slide_id = data['slide_id']    
     slide_dir = output_dir / slide_id
 
     try:
@@ -345,14 +343,8 @@ def save_annotations(
                 ann_session += 1
             ann_path = f'{slide_dir}/{slide_id}_cells_ann_session_{ann_session}.dcm'
         
-        #logging.info(f'Writing annotation to {str(ann_path)}.')
         data['ann_dcm'].save_as(ann_path)
 
-        image_stop_time = time()
-        time_for_image = image_stop_time - image_start_time
-        #logging.info(
-        #    f'Saved annotations for slide {slide_id} in {time_for_image:.2f}s'
-        #)
         
     except Exception as e:
         logging.error(f"Error {str(e)}")
@@ -391,7 +383,6 @@ def run(
 
     slide_ids = [item for item in os.listdir(source_image_root_dir) if os.path.isdir(source_image_root_dir/item)]
     for slide_id in tqdm(slide_ids):
-        print(slide_id)
         image_data = get_source_image_metadata(source_image_root_dir/slide_id)
         image_data['mrxs_source_image_path'] = get_mrxs_image_path(mrxs_image_root, slide_id)
 
