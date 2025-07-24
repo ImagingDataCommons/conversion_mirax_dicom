@@ -381,7 +381,8 @@ def run(
     
     cells, rois = preprocess_annotation_csvs(csv_cells, csv_rois)
 
-    slide_ids = [item for item in os.listdir(source_image_root_dir) if os.path.isdir(source_image_root_dir/item)]
+    slide_ids = [item for item in os.listdir(source_image_root_dir) if 
+                (os.path.isdir(source_image_root_dir/item) and item.endswith('_bm'))]
     for slide_id in tqdm(slide_ids):
         image_data = get_source_image_metadata(source_image_root_dir/slide_id, output_dir)
         image_data['mrxs_source_image_path'] = get_mrxs_image_path(mrxs_image_root, slide_id)
