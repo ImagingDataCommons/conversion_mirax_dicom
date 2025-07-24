@@ -26,7 +26,8 @@ def run_dcentvfy(dicom3tools: Path, slide_dir: str):
 
 
 def run(dicom3tools: Path, data_dir: Path) -> None:     
-    slide_ids = [item for item in os.listdir(data_dir) if os.path.isdir(data_dir/item)]
+    slide_ids = [item for item in os.listdir(data_dir) if 
+                (os.path.isdir(data_dir/item) and item.endswith('_bm'))]
     for slide_id in slide_ids: 
         run_dcentvfy(dicom3tools, data_dir/slide_id)
         run_dciodvfy(dicom3tools, data_dir/slide_id) 
