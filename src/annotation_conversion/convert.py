@@ -137,7 +137,6 @@ def get_graphic_data(
             annotation_coordinate_type,
         )
         graphic_data.append(graphic_item)   
-    logging.info(f'Parsed {len(graphic_data)} annotations.')
     return graphic_data
 
 
