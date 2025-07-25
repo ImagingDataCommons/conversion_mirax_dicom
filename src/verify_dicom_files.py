@@ -34,7 +34,7 @@ def run(dicom3tools: Path, data_dir: Path) -> None:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run verification of BMDeep converted dataset.') 
+    parser = argparse.ArgumentParser(description='Run verification of converted dataset.') 
     parser.add_argument('image_data_dir', type=Path, help='Path to folder with converted DICOM image files. Each slide is supposed to be in a separate folder named after the slide ID.')
     parser.add_argument('dicom3tools', type=Path, help='Path to dicom3tools bin containing all different subtools.')
     args = parser.parse_args()
