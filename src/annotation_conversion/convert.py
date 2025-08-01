@@ -338,7 +338,7 @@ def create_bulk_annotations_for_cells(
         annotation_coordinate_type=annotation_coordinate_type,
         annotation_groups=groups,
         series_instance_uid=series_uid, 
-        series_number=33, # no deeper meaning, just higher number in case other series with images might be added
+        series_number=33+int(ann_session) if ann_session != 'consensus' else 42, # no deeper meaning, just higher number in case other series with images might be added
         sop_instance_uid=hd.UID(),
         instance_number=sop_instance_number, 
         manufacturer=metadata_config.manufacturer,
