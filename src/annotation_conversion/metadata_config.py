@@ -19,8 +19,8 @@ algorithm_type = hd.ann.AnnotationGroupGenerationTypeValues.MANUAL
 # Metadata functions
 def series_description_cell_anns(annotation_session: str) -> str: 
     if annotation_session == 'consensus': 
-        return f'Cell bounding boxes with consensus cell type labels'
-    return f'Cell bounding boxes with cell type labels; annotation session: {annotation_session}'
+        return f'Consensus: cell bounding boxes with cell type labels'
+    return f'Session {annotation_session}: Cell bounding boxes with cell type labels'
 
 def add_clinical_trial_series_id(annotation_session: str) -> Tuple[pydicom.dataelem.DataElement]:
     return (pydicom.dataelem.DataElement(0x00120071, 'LO', annotation_session),
