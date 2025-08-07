@@ -88,7 +88,7 @@ cell_labels = {
     'thrombocyte_aggregate': [code_anatomical_structure, Code('60649002', 'SCT', 'Platelet aggregation')],
     'unknown_blast': [code_anatomical_structure, Code('312256009', 'SCT', 'Blast cell')], 
     'no_consensus_found': [code_anatomical_structure, Code('414387006', 'SCT', 'Structure of haematological system')],
-    'heamatological_structure': [code_anatomical_structure, Code('414387006', 'SCT', 'Structure of haematological system')]
+    'haematological_structure': [code_anatomical_structure, Code('414387006', 'SCT', 'Structure of haematological system')]
 }
 
 code_cell_identifier = Code('0010197', 'EFO', 'single cell identifier')
