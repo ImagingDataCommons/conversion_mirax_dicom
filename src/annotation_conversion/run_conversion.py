@@ -9,7 +9,6 @@ import pandas as pd
 import highdicom as hd
 from pathlib import Path
 from tqdm import tqdm
-from time import time
 from typing import Any, Dict, Union  
 
 from data_utils import ROIAnnotation, preprocess_annotation_csvs, filter_slide_annotations, parse_cell_annotations, parse_roi_annotations
