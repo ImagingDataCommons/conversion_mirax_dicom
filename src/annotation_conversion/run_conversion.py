@@ -383,6 +383,7 @@ def run(
 
     slide_ids = [item for item in os.listdir(source_image_root_dir) if 
                 (os.path.isdir(source_image_root_dir/item) and item.endswith('_bm'))]
+                
     for slide_id in tqdm(slide_ids):
         image_data = get_source_image_metadata(source_image_root_dir/slide_id, output_dir)
         image_data['mrxs_source_image_path'] = get_mrxs_image_path(mrxs_image_root, slide_id)
@@ -405,7 +406,6 @@ def run(
         slide_cells = filter_slide_annotations(cells, slide_id)
         if len(slide_cells) > 0: 
             # Loop over all the different steps / consensus 
-            
             ann_sessions = list(range(slide_cells['ann_sessions'].max())) # zero-based
             for ann_session in ann_sessions: 
                 slide_cells_this_ann_session = slide_cells[slide_cells['ann_sessions'] > ann_session]
@@ -425,11 +425,12 @@ def run(
             data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
             data = create_dcm_annotations(data=data, 
                                           series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_session created here 
-                                          sop_instance_number=ann_sessions[-1]+1, 
+                                          sop_instance_number=ann_sessions[-1]+1 if ann_sessions else 1, 
                                           graphic_type=graphic_type, 
                                           annotation_coordinate_type=annotation_coordinate_type, 
                                           output_dir=output_dir, 
                                           ann_session='consensus')
+            print(data)
             save_annotations(data, output_dir, ann_session='consensus')
 
 

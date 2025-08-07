@@ -72,7 +72,7 @@ def _rename_cell_labels(cells: pd.DataFrame) -> pd.DataFrame:
 
 
 def _add_number_of_annotation_steps(annotations: pd.DataFrame) -> pd.DataFrame:
-    annotations['ann_sessions'] = annotations['all_original_annotations'].apply(lambda x: len(x.split(',')))
+    annotations['ann_sessions'] = annotations['all_original_annotations'].apply(lambda x: 0 if x == '' else len(x.split(',')))
     return annotations
 
 def filter_slide_annotations(annotations: pd.DataFrame, slide_id: str) -> List[CellAnnotation]: 
