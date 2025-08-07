@@ -430,7 +430,6 @@ def run(
                                           annotation_coordinate_type=annotation_coordinate_type, 
                                           output_dir=output_dir, 
                                           ann_session='consensus')
-            print(data)
             save_annotations(data, output_dir, ann_session='consensus')
 
 
