@@ -9,18 +9,18 @@ def find_and_move_thumbnails(source_dir, thumbnail_dir):
     if not os.path.exists(thumbnail_dir):
         os.makedirs(thumbnail_dir)
     # Walk through the source directory and find DICOM files
+    c=0
     for root, _, files in os.walk(source_dir):
         for file in files:
             if file.endswith('.dcm'):
                 filepath = os.path.join(root, file)
-                ds = pydicom.dcmread(filepath)
-                try: 
-                    image_type = ds.ImageType 
-                    if image_type[2] == 'THUMBNAIL':
+                ds = pydicom.dcmread(filepath, stop_before_pixels=True)
+                if ds.Modality == 'SM': 
+                    if ds.ImageType[2] == 'THUMBNAIL':
+                        c+=1
                         shutil.move(filepath, os.path.join(thumbnail_dir, file))
-                except: 
-                    continue 
-
+    print(f'Moved {c} THUMBNAILs')
+        
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Search folders of DICOM series and find and move THUMBNAIL images.') 
