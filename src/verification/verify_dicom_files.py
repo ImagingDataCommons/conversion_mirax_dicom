@@ -44,8 +44,8 @@ def run(dicom3tools: Path, data_dir: Path) -> None:
     if not os.path.isdir(output_dir): 
         os.makedirs(output_dir)
     for slide_id in slide_ids: 
-        run_dcentvfy(dicom3tools, data_dir/slide_id)
-        run_dciodvfy(dicom3tools, data_dir/slide_id)
+        run_dcentvfy(dicom3tools, data_dir/slide_id, output_dir)
+        run_dciodvfy(dicom3tools, data_dir/slide_id, output_dir)
     summarize_errors(output_dir) 
 
 
