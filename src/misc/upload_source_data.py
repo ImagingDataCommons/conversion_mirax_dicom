@@ -28,7 +28,8 @@ def upload_to_gcs(local_path: Path, bucket_path: str, errors: List) -> None:
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as e:
-        errors.append(f"Upload error for {local_path}: {e.stderr.strip()}")
+        print(f'Upload error for {local_path}: {e.stderr.strip()}')
+        errors.append(f'Upload error for {local_path}: {e.stderr.strip()}')
 
 
 def run(source_dir: Path, bucket_name: str, error_log: Path) -> None:
