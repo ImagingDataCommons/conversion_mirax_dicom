@@ -1,5 +1,4 @@
 """Utilities for converting annotations. Clear of cloud-specific things."""
-import logging
 import openslide
 import numpy as np
 import highdicom as hd
@@ -46,7 +45,7 @@ def process_annotation(
     """      
     xmin, ymin, xmax, ymax = ann.bounding_box 
     xmin, ymin, xmax, ymax = xmin-openslide_bounds[0], ymin-openslide_bounds[1], xmax-openslide_bounds[0], ymax-openslide_bounds[1]
-    
+
     if graphic_type == hd.ann.GraphicTypeValues.RECTANGLE:
         graphic_data = np.array(
             [
