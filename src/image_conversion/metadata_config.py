@@ -58,11 +58,11 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
 
     objective = Objectives(
         lenses=[LenseCode('High power non-immersion lens')],
-        objective_power=mrxs_metadata['mirax.GENERAL.OBJECTIVE_MAGNIFICATION']
+        objective_power=float(mrxs_metadata['mirax.GENERAL.OBJECTIVE_MAGNIFICATION'])
     )
 
     optical_path = OpticalPath(
-        objective=[objective]
+        objective=objective
     )
      
     patient = Patient(
