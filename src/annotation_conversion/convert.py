@@ -353,6 +353,4 @@ def create_bulk_annotations_for_cells(
     for elem in metadata_config.add_clinical_trial_series_id(str(ann_session)): 
         annotations.add(elem) 
     
-    print('Iam done')
-
     return annotations
