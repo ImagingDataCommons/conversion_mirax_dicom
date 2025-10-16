@@ -203,6 +203,7 @@ def create_bulk_annotations_for_rois(
                 values=np.array(identifiers),
             )
         ],
+        display_color = hd.color.CIELabColor.from_string(metadata_config.roi_color_code)
     )
 
     annotations = hd.ann.MicroscopyBulkSimpleAnnotations(
@@ -304,6 +305,7 @@ def create_bulk_annotations_for_cells(
                         values=np.array([roi_identifiers[i] for i in indices_in_roi]),
                     )
                 ],
+                display_color = hd.color.CIELabColor.from_string(metadata_config.cell_color_codes.get(label, '#ffffff'))
             )
             groups.append(group)
             group_number += 1
@@ -327,6 +329,7 @@ def create_bulk_annotations_for_cells(
                         values=np.array([cell_identifiers[i] for i in indices_out_of_roi]),
                     ),
                 ],
+                display_color = hd.color.CIELabColor.from_string(metadata_config.cell_color_codes.get(label, '#ffffff'))
             )
             groups.append(group)
             group_number += 1
@@ -349,5 +352,7 @@ def create_bulk_annotations_for_cells(
     # adding indicator for annotation session
     for elem in metadata_config.add_clinical_trial_series_id(str(ann_session)): 
         annotations.add(elem) 
+    
+    print('Iam done')
 
     return annotations
