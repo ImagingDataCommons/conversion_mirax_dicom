@@ -2,7 +2,8 @@ import pydicom
 from pathlib import Path
 from wsidicomizer import WsiDicomizer
 from wsidicomizer.metadata import WsiDicomizerMetadata
-
+from wsidicomizer.config import settings
+settings.fallback_to_blank_tile_on_error = True
 
 def wsidicomizer_convert(input_file: Path, output_folder: Path, metadata: WsiDicomizerMetadata, additional_metadata: pydicom.Dataset) -> None: 
     _ = WsiDicomizer.convert(
