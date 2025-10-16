@@ -22,6 +22,7 @@ from wsidicom.metadata import (
     OpticalPath,
     Patient,
     PatientSex,
+    Pyramid,
     Slide,
     SlideSample,
     Specimen,
@@ -51,7 +52,7 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
         model_name=find_property_by_suffix(mrxs_metadata, 'scanner_hardware_version'),
         software_versions=[find_property_by_suffix(mrxs_metadata, 'scanner_software_version')]
     )
-
+    
     image = Image(
         acquisition_datetime=datetime.strptime(mrxs_metadata['mirax.GENERAL.SLIDE_CREATIONDATETIME'], '%d/%m/%Y %H:%M:%S')
     )
@@ -63,6 +64,11 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
 
     optical_path = OpticalPath(
         objective=objective
+    )
+
+    pyramid = Pyramid(
+        image=image, 
+        optical_paths=[optical_path],
     )
      
     patient = Patient(
@@ -96,11 +102,10 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
     )
 
     return WsiDicomizerMetadata(
-        image=image,
         patient=patient,
         equipment=equipment,
-        optical_paths=[optical_path],
-        slide=slide
+        slide=slide, 
+        pyramid=pyramid
     ) 
 
 
