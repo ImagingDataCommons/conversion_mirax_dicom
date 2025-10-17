@@ -114,7 +114,7 @@ cell_color_codes = {
     'lymphoid_precursor_cell': '#94b8cf',
     'lymphocyte': '#699cbb',
     'lymphocytic_blast': '#c8b8b7',
-    'lymphoidocyte': '#699cbb', # TODO for now same color as lymphocyte. 
+    'lymphoidocyte': '#d8d6d5', 
     'macrophage': '#f58355',
     'megakaryocyte': '#fbc783',
     'micromegakaryocyte': '#d7d2d0',
@@ -137,7 +137,7 @@ cell_color_codes = {
     'promegakaryocyte': '#fbcf95',
     'promonocyte': '#f8a280',
     'promyelocyte': '#fbca79',
-    'pseudo_gaucher_cell': '#d6d0ce',
+    'pseudo_gaucher_cell': '#d6d0ce', 
     'segmented_basophil': '#f8a31e',
     'segmented_eosinophil': '#f8a31e',
     'segmented_neutrophil': '#f8a31e',
@@ -150,20 +150,4 @@ cell_color_codes = {
     'no_consensus_found': '#d4cac7', # color taken from 'unsure' in BMDeep color codes
     'haematological_structure': '#ffffff' # color white for general structure (unlabeled)
 }
-
-
-# TODO to be removed soon 
-cell_color_codes = {
-    'annotation_error': '#d8d4d4',
-    'common_myelorogenitor': '#fac1aa',
-    'megakaryoblast': '#fcd7a6',
-    'mast_cell': '#fcbba3',
-    'common_lymphorogenitor': '#a9c6d8',
-    'special_cell': '#dadada',
-    'pathological_cell': '#dadada',
-    'lymphoyte': '#d8d6d5',
-    'blast': '#d4cac7',
-    'other': '#fac1aa'
-    }
-
 
