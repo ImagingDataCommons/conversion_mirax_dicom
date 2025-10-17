@@ -230,7 +230,7 @@ def create_bulk_annotations_for_cells(
     cell_identifiers: list[int],
     roi_identifiers: list[int], 
     labels: list[str],
-    ann_session: str, 
+    ann_session: Union[int, str], 
     series_uid: hd.UID, 
     sop_instance_number: int,
     graphic_type: str = 'RECTANGLE',
@@ -252,7 +252,7 @@ def create_bulk_annotations_for_cells(
         Identifier for each cell annotation indicating which ROI they are part of. 
     labels: list[str]
         Label for each annotation taken as is from input. 
-    ann_session: str 
+    ann_session: Union[int, str] 
         Identifier of the step in the annotation process.
     series_uid: hd.UID
         DICOM SeriesInstanceUID. Each annotation steps, consensus and ROIs go into a separate Series. 
@@ -340,7 +340,7 @@ def create_bulk_annotations_for_cells(
         annotation_coordinate_type=annotation_coordinate_type,
         annotation_groups=groups,
         series_instance_uid=series_uid, 
-        series_number=33+int(ann_session) if ann_session != 'consensus' else 42, # no deeper meaning, just higher number in case other series with images might be added
+        series_number=33+int(ann_session) if isinstance(ann_session, int) else 42, # no deeper meaning, just higher number in case other series with images might be added
         sop_instance_uid=hd.UID(),
         instance_number=sop_instance_number, 
         manufacturer=metadata_config.manufacturer,

@@ -20,7 +20,10 @@ algorithm_type = hd.ann.AnnotationGroupGenerationTypeValues.MANUAL
 def series_description_cell_anns(annotation_session: str) -> str: 
     if annotation_session == 'consensus': 
         return f'Consensus: cell bounding boxes with cell type labels'
-    return f'Session {annotation_session}: Cell bounding boxes with cell type labels'
+    elif annotation_session == 'detection-only':
+        return f'Unlabeled cell bounding boxes'
+    else: 
+        return f'Session {annotation_session}: Cell bounding boxes with cell type labels'
 
 def add_clinical_trial_series_id(annotation_session: str) -> Tuple[pydicom.dataelem.DataElement]:
     return (pydicom.dataelem.DataElement(0x00120071, 'LO', annotation_session),

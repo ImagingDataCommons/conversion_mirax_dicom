@@ -147,7 +147,7 @@ def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_
     for _, row in annotations.iterrows(): 
         x_min, x_max, y_min, y_max = row['x1'], row['x2'], row['y1'], row['y2']
 
-        if ann_session == 'consensus': 
+        if ann_session == 'consensus' or 'detection-only': 
             cell_label = row['original_consensus_label']
         else: 
             cell_label = row['all_original_annotations'].split(',')[ann_session]

@@ -238,7 +238,7 @@ def create_dcm_annotations(
         matrix (SCOORD, default).
     output_dir: pathlib.Path
         A local output directory to store error logs.
-    ann_session: Union[str, None]
+    ann_session: Union[int, str, None]
         Annotation step in the annotation process. Only necessary for cell annotations. 
 
     Returns
@@ -404,32 +404,47 @@ def run(
         # Create DICOM objects for cell annotations
         slide_cells = filter_slide_annotations(cells, slide_id)
         if len(slide_cells) > 0: 
-            # Loop over all the different steps / consensus 
             ann_sessions = list(range(slide_cells['ann_sessions'].max())) # zero-based
-            for ann_session in ann_sessions: 
-                slide_cells_this_ann_session = slide_cells[slide_cells['ann_sessions'] > ann_session]
-                data = parse_cell_annotations(image_data, slide_cells_this_ann_session, ann_session)
+
+            # Dealing here with detection annotations without 'proper' cell type labels (all get label 'haematological_structure')
+            if len(ann_sessions) == 0: 
+                data = parse_cell_annotations(image_data, slide_cells, ann_session='detection-only')
                 data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
                 data = create_dcm_annotations(data=data, 
-                                              series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_session created here
-                                              sop_instance_number=ann_session+1, 
-                                              graphic_type=graphic_type, 
-                                              annotation_coordinate_type=annotation_coordinate_type, 
-                                              output_dir=output_dir, 
-                                              ann_session=ann_session)  
-                save_annotations(data, output_dir, ann_session)
-        
-            # Also encode the final consensus including those cells where no consensus could be found. 
-            data = parse_cell_annotations(image_data, slide_cells, ann_session='consensus')
-            data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
-            data = create_dcm_annotations(data=data, 
-                                          series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_session created here 
-                                          sop_instance_number=ann_sessions[-1]+1 if ann_sessions else 1, 
-                                          graphic_type=graphic_type, 
-                                          annotation_coordinate_type=annotation_coordinate_type, 
-                                          output_dir=output_dir, 
-                                          ann_session='consensus')
-            save_annotations(data, output_dir, ann_session='consensus')
+                                            series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_session created here 
+                                            sop_instance_number=ann_sessions[-1]+1 if ann_sessions else 1, 
+                                            graphic_type=graphic_type, 
+                                            annotation_coordinate_type=annotation_coordinate_type, 
+                                            output_dir=output_dir, 
+                                            ann_session='detection-only')
+                save_annotations(data, output_dir, ann_session='detection-only')
+            
+            # Dealing with annotations including cell type labels
+            else: 
+                for ann_session in ann_sessions: 
+                    slide_cells_this_ann_session = slide_cells[slide_cells['ann_sessions'] > ann_session]
+                    data = parse_cell_annotations(image_data, slide_cells_this_ann_session, ann_session)
+                    data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
+                    data = create_dcm_annotations(data=data, 
+                                                series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_session created here
+                                                sop_instance_number=ann_session+1, 
+                                                graphic_type=graphic_type, 
+                                                annotation_coordinate_type=annotation_coordinate_type, 
+                                                output_dir=output_dir, 
+                                                ann_session=ann_session)  
+                    save_annotations(data, output_dir, ann_session)
+            
+                # Also encode the final consensus including those cells where no consensus could be found. 
+                data = parse_cell_annotations(image_data, slide_cells, ann_session='consensus')
+                data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
+                data = create_dcm_annotations(data=data, 
+                                            series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_session created here 
+                                            sop_instance_number=ann_sessions[-1]+1 if ann_sessions else 1, 
+                                            graphic_type=graphic_type, 
+                                            annotation_coordinate_type=annotation_coordinate_type, 
+                                            output_dir=output_dir, 
+                                            ann_session='consensus')
+                save_annotations(data, output_dir, ann_session='consensus')
 
 
 if __name__ == "__main__":
