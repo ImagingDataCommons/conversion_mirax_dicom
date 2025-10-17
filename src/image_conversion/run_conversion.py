@@ -99,6 +99,7 @@ def run(local_work_dir: Path, gaia_work_dir: Path, metadata: Path, ) -> None:
         additional_metadata = build_additional_metadata(
             study_description='Bone marrow aspirate smear, pediatric leukemia', 
             image_series_description='Bone marrow aspirate smear, May-Gruenwald-Giemsa stain',
+            aquisition_date=datetime.strptime(mrxs_properties['mirax.GENERAL.SLIDE_CREATIONDATETIME'], '%d/%m/%Y %H:%M:%S').date(),
             patient_id=patient_id,
             patient_age=clinical_metadata.loc[patient_id]['age'], 
             aquisition_duration=aquisition_duration, 

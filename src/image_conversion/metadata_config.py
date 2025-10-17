@@ -112,6 +112,7 @@ def build_metadata(slide_id: str, patient_id: str, mrxs_metadata: openslide._Pro
 def build_additional_metadata(
         study_description: str, 
         image_series_description: str, 
+        aquisition_date: datetime.date,
         patient_id: str, 
         patient_age: str,              
         aquisition_duration: float, 
@@ -126,7 +127,9 @@ def build_additional_metadata(
     
     ds = pydicom.Dataset()
     ds.SeriesDescription = image_series_description
+    ds.SeriesDate = aquisition_date
     ds.StudyDescription = study_description
+    ds.StudyDate = aquisition_date
     ds.PatientAge = patient_age 
     ds.add_new([0x0018, 0x9073], 'FD', aquisition_duration) 
     ds.add_new([0x0012, 0x0060], 'LO', clinical_trial_coord_center) 
