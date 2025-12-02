@@ -379,11 +379,15 @@ def run(
         output_dir.mkdir(exist_ok=True)
     
     cells, rois = preprocess_annotation_csvs(csv_cells, csv_rois)
+    dupl = cells.duplicated(subset=['cell_id'])
+    duplic = cells[dupl]
+    print(len(duplic), duplic['cell_id'])
 
     slide_ids = [item for item in os.listdir(source_image_root_dir) if 
                 (os.path.isdir(source_image_root_dir/item) and item.endswith('_bm'))]
                 
     for slide_id in tqdm(slide_ids):
+        print(slide_id)
         image_data = get_source_image_metadata(source_image_root_dir/slide_id, output_dir)
         image_data['mrxs_source_image_path'] = get_mrxs_image_path(mrxs_image_root, slide_id)
 
@@ -405,7 +409,6 @@ def run(
         slide_cells = filter_slide_annotations(cells, slide_id)
         if len(slide_cells) > 0: 
             ann_sessions = list(range(slide_cells['ann_sessions'].max())) # zero-based
-
             # Dealing here with detection annotations without 'proper' cell type labels (all get label 'haematological_structure')
             if len(ann_sessions) == 0: 
                 data = parse_cell_annotations(image_data, slide_cells, ann_session='detection-only')
@@ -423,7 +426,7 @@ def run(
             else: 
                 for ann_session in ann_sessions: 
                     slide_cells_this_ann_session = slide_cells[slide_cells['ann_sessions'] > ann_session]
-                    data = parse_cell_annotations(image_data, slide_cells_this_ann_session, ann_session)
+                    data = parse_cell_annotations(image_data, slide_cells_this_ann_session[:10], ann_session)
                     data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
                     data = create_dcm_annotations(data=data, 
                                                 series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_session created here
@@ -435,7 +438,7 @@ def run(
                     save_annotations(data, output_dir, ann_session)
             
                 # Also encode the final consensus including those cells where no consensus could be found. 
-                data = parse_cell_annotations(image_data, slide_cells, ann_session='consensus')
+                data = parse_cell_annotations(image_data, slide_cells[:10], ann_session='consensus')
                 data = parse_annotations_to_graphic_data(data, graphic_type, annotation_coordinate_type, output_dir)
                 data = create_dcm_annotations(data=data, 
                                             series_uid=hd.UID(), # create unique identifier for the DICOM Series holding cell annotation objects at this ann_session created here 

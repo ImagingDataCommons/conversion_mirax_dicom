@@ -34,7 +34,9 @@ def preprocess_annotation_csvs(cell_csvs: List[Path], roi_csvs: List[Path]) -> T
     cells = pd.concat(cells_dfs, axis=0, ignore_index=True)
     cells = _rename_cell_labels(cells)
     cells = _add_number_of_annotation_steps(cells)
+    cells.sort_values(by='cell_id', inplace=True)
     rois = pd.concat([pd.read_csv(r) for r in roi_csvs], axis=0, ignore_index=True)
+    rois.sort_values(by='roi_id', inplace=True)
     return cells, rois 
 
 
@@ -147,10 +149,11 @@ def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_
     for _, row in annotations.iterrows(): 
         x_min, x_max, y_min, y_max = row['x1'], row['x2'], row['y1'], row['y2']
 
-        if ann_session == 'consensus' or 'detection-only': 
+        if (ann_session == 'consensus') or (ann_session == 'detection-only'): 
             cell_label = row['original_consensus_label']
         else: 
             cell_label = row['all_original_annotations'].split(',')[ann_session]
+        print('cell label:', cell_label, row['cell_id'])
         ann.append(CellAnnotation(
             cell_identifier=row['cell_id'], 
             roi_identifier=row['roi_id'],
