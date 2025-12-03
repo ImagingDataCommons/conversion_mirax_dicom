@@ -337,9 +337,6 @@ def save_annotations(
         if data['ann_type'] == 'roi': 
             ann_path = f'{slide_dir}/{slide_id}_rois.dcm'
         else: 
-            # Increase ann_session to be 1-indexed instead of 0-indexed in the output files 
-            if isinstance(ann_session, int): 
-                ann_session += 1
             ann_path = f'{slide_dir}/{slide_id}_cells_ann_session_{ann_session}.dcm'
         
         data['ann_dcm'].save_as(ann_path)
