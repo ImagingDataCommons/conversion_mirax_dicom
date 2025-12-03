@@ -153,7 +153,6 @@ def parse_cell_annotations(data: Dict[str, Any], annotations: pd.DataFrame, ann_
             cell_label = row['original_consensus_label']
         else: 
             cell_label = row['all_original_annotations'].split(',')[ann_session]
-        print('cell label:', cell_label, row['cell_id'])
         ann.append(CellAnnotation(
             cell_identifier=row['cell_id'], 
             roi_identifier=row['roi_id'],
