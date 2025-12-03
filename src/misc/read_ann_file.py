@@ -43,11 +43,10 @@ def quick_overview(data_dir: Path):
         ann_groups = ann.get_annotation_groups()
         print('Number of annotation groups', len(ann_groups))
         cells = get_cells(ann_groups)
-        print(cells)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run BMDeep dataset conversion from MRXS to DICOM on a local machine, but retrieving dataset from mounted server.') 
+    parser = argparse.ArgumentParser(description='blablabla') 
     parser.add_argument('ann', type=Path, help='Path to ann files.')
     args = parser.parse_args()
 
